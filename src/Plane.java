@@ -28,6 +28,12 @@ public class Plane {
 	private SliderPoint[] sliderPoints;
 	public int[] xPointArray;  //slider pointers
 	private PosPoint[] posPoints;
+	
+	private Map<String,String> pointINV;
+
+	private double delta = 0.000000000001;//difference of border
+	
+	private boolean debug = true;
 
 	//public ArrayList<Vector2i> points;
 	//public ArrayList<Label> labels;
@@ -48,7 +54,7 @@ public class Plane {
 	}
 	
 	public void debugPrint(String text){
-		if(MapLabeler.local){
+		if(MapLabeler.local && debug){
 			System.out.println(text);
 		}
 	}
@@ -76,18 +82,16 @@ public class Plane {
 	    /*
 	     * TODO: max size algorithm for 2pos
 	     */
-	    
-	    //int n= xSortedOrder[0];
-	    
+
 	    int range = 10000;//TEMP for best performance find x-min and x-max, y-min and y-max and change the range to this.
 		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range+1,range+1));//new quadtree with (top) level 0 and dimensions (range+1)^2
 		
-		height = 100f;//TODO initial height of label, to be calculated by jorrick's max-height algorithm.		
-		double minHeight = 0f;//TODO the minimal possible height of a label, could be replaced by the actual minimal.
+		height = 100;//TODO initial height of label, to be calculated by jorrick's max-height algorithm.		
+		double minHeight = (aspectRatio < 1) ? 1 : (1/aspectRatio);//minimal height
+		
 		double maxHeight = height*2;//2x the maximal height, so that we start with the calculated max-height in the loop.
 		int rounds = 0;//amount of completed loops
-		double difference = 0.000001f;//WARNING: do not make this number smaller than 0.000001! the program will start an infinite loop
-		while(maxHeight-minHeight>difference){//while the difference isn't too small
+		while(maxHeight-minHeight>delta){//while the difference isn't too small
 			height = (maxHeight+minHeight)/2;//height to use is the average of max and min height
 			
 			clearLabels(posPoints);//clear all labels from the arraylists in the points
@@ -109,7 +113,7 @@ public class Plane {
 			
 			ArrayList<Clause> clauses = new ArrayList<Clause>();//a list which will initially contain additional clauses.
 			//the additional clauses are required to fix the value of a dead label to the negation of the clauseValue of that label.
-			HashMap<Label, ArrayList<Label>> collisions = findCollisions(labels, clauses, quad, height);
+			HashMap<Label, ArrayList<Label>> collisions = findCollisions2pos(labels, clauses, quad, height);
 			//get the list of collisions	
 			if (collisions!=null){//collisions will return null if a point with only dead labels exists
 				clauses.addAll(getClauses(collisions));//add the clauses generated with the collisions to the clauses list.
@@ -131,11 +135,14 @@ public class Plane {
 			rounds++;//DEBUG
 			debugPrint("--------------------------------------------------------------------------");//DEBUG
 		}
-		debugPrint("The height solution is: " + minHeight + ", this took " + rounds + " loops.");//DEBUG
+		
+		debugPrint("Given minHeight: " + height);
+		height = Math.floor(height*(1/(delta*10)))*delta*10;
+		debugPrint("The height solution is: " + height + ", this took " + rounds + " loops.");//DEBUG
 		
 		if(minGraph!=null){
 			Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));
-			debugPrint(order.toString());	
+			debugPrint("dfs order:" + order.toString());	
 			while(!order.isEmpty()){
 				ClauseValue next = order.pop();
 				if(clausePoint.get(next).getPosition()==null){
@@ -147,26 +154,31 @@ public class Plane {
 			}
 		}
 		else {//if somehow, the input has duplicate points which is not allowed according to the assignment:
+			//give all points the same value, with height = 0.
 			for(PosPoint p : posPoints){
 				p.setPosition(0, true);
 			}
 		}
-		
-		//TODO find configuration for the minHeight, magic required!
-		//possibly using the connected graph, which we can save for working cases?
-		
-		/*
-		 * This is where the magic happens
-		 */
 		return posPoints;//return the array of points, now with correct positions.
 	}
 	
-	public void getNext(ClauseValue next){
+	/*public void getNext(ClauseValue next){
 		clausePoint.get(next).setPosition(next.isPositive() ? 1 : 0,true);
 		if(!minGraph.edgesFrom(next).isEmpty()){			
 			for(ClauseValue value : minGraph.edgesFrom(next)){
 				getNext(value);
 			}	
+		}
+	}*/
+	
+	public void getNext(ClauseValue next){
+		if(clausePoint.get(next).getPosition()==null){
+			clausePoint.get(next).setPosition(next.isPositive() ? 1 : 0,true);
+			if(!minGraph.edgesFrom(next).isEmpty()){			
+				for(ClauseValue value : minGraph.edgesFrom(next)){
+					getNext(value);
+				}	
+			}
 		}
 	}
 
@@ -176,45 +188,117 @@ public class Plane {
 	 * and the orientation of every label. This method returns the orientation array.
 	 */
 	public PosPoint[] find4PosSolution(){
-		int range = 10000;//TEMP for best performance find x-min and x-max, y-min and y-max and change the range to this.
+		delta = 0.000001;
+		//TODO: we might have to use doubles, as the values aren't that accurate if a not fitting start value is used.
+	    int[] xSortedOrder = MergeSort.sort(posPoints);//sorting the points on x-cor, referencing by index in this array.
+	    
+	    /*
+	     * TODO: max size algorithm for 2pos
+	     */
+	    
+	    //int n= xSortedOrder[0];
+	    
+	    int range = 10000;//TEMP for best performance find x-min and x-max, y-min and y-max and change the range to this.
 		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range+1,range+1));//new quadtree with (top) level 0 and dimensions (range+1)^2
-		ArrayList<Label> labels = new ArrayList<Label>();//all labels will be stored in this arraylist. 
-
-		for(SliderPoint p:sliderPoints){//make all labels for all points.
-			addLabel(new Label(p, 1, true), labels);//shift=1 and top=true gives us the NE label; 
-			addLabel(new Label(p, 0, true), labels);//shift=0 and top=true gives us the NW label; 
-			addLabel(new Label(p, 1, false), labels);//shift=1 and top=false gives us the SE label; 
-			addLabel(new Label(p, 0, false), labels);//shift=0 and top=false gives us the SW label; 
+		
+		pointINV = new HashMap<String,String>();
+		
+		height = 25;//TODO initial height of label, to be calculated by jorrick's max-height algorithm.		
+		double minHeight = (aspectRatio < 1) ? 1 : (1/aspectRatio);//TODO the minimal possible height of a label, could be replaced by the actual minimal.
+		double maxHeight = height*2;//2x the maximal height, so that we start with the calculated max-height in the loop.
+		int rounds = 0;//amount of completed loops
+		
+		while(maxHeight-minHeight>delta){//while the difference isn't too small
+			height = (maxHeight+minHeight)/2;//height to use is the average of max and min height
+			
+			clearLabels(posPoints);//clear all labels from the arraylists in the points
+			ArrayList<Label> labels = new ArrayList<Label>();//all labels will be stored in this arraylist. 
+			debugPrint("currentHeight: " + height + ", minHeight: " + minHeight + ", maxHeight: " + maxHeight + ", difference: " + (maxHeight-minHeight));//DEBUG
+			
+			for(PosPoint p:posPoints){//make the top labels for all points.
+				addLabel(new Label(p, 1, true), labels);//shift=1 and top=true gives us the NE label; 
+				addLabel(new Label(p, 0, true), labels);//shift=0 and top=true gives us the NW label; 
+				addLabel(new Label(p, 1, false), labels);//shift=1 and top=false gives us the SE label; 
+				addLabel(new Label(p, 0, false), labels);//shift=0 and top=false gives us the SW label; 
+			}
+			
+			if(clausePoint==null){
+				clausePoint = new HashMap<ClauseValue, PosPoint>();
+				for(PosPoint p: posPoints){
+					clausePoint.put((new Label(p, 1, true)).toClause(), p);
+					clausePoint.put((new Label(p, 0, true)).toClause(), p);
+					clausePoint.put((new Label(p, 1, false)).toClause(), p);
+					clausePoint.put((new Label(p, 0, false)).toClause(), p);
+					pointINV.put(p.toString(1),p.toString(0));
+					pointINV.put(p.toString(0),p.toString(1));
+				}
+			}
+			
+			ArrayList<Clause> clauses = new ArrayList<Clause>();//a list which will initially contain additional clauses.
+			//the additional clauses are required to fix the value of a dead label to the negation of the clauseValue of that label.
+			HashMap<Label, ArrayList<Label>> collisions = findCollisions4Pos(labels, clauses, quad, height);
+			//System.out.println(labels);
+			//System.out.println(collisions);		
+			
+			if(collisions != null){
+				clauses.addAll(getClauses(collisions));//add the clauses generated with the collisions to the clauses list.
+				if(checkTwoSatisfiability4pos(clauses)){//if a satisfiable configuration exists
+					minHeight = height;//this height will be valid, so the minimum height becomes this height.
+					debugPrint("Solution is possible");//DEBUG
+				}
+				else{//if no solution can be found with 2-sat
+					maxHeight = height;
+					//this height has no solution, so the maximum found height for which this does not work is now height
+					debugPrint("2-Sat has no solution.");//DEBUG
+				}
+			}
+			else{
+				maxHeight = height;
+				//this height has no solution, so the maximum found height for which this does not work is now height
+				debugPrint("A point is completely dead.");//DEBUG
+			}
+			rounds++;//DEBUG
+			debugPrint("--------------------------------------------------------------------------");//DEBUG
 		}
 		
-		height = 1;//TODO initial height of label, to be calculated by jorrick's max-height algorithm.
-		quad.init(labels, height, aspectRatio, range);//use this every time the height or label changes.
-		setIntersectionsQuad(quad, labels);//gives all labels the correct boolean value for intersection.
+		debugPrint("Given minHeight: " + height);
+		height = Math.floor(height*(1/(delta*10)))*delta*10;
+		debugPrint("The height solution is: " + height + ", this took " + rounds + " loops.");//DEBUG
 		
+		if(minGraph!=null){
+			Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));
+			debugPrint(order.toString());	
+			while(!order.isEmpty()){
+				ClauseValue next = order.pop();
+				if(clausePoint.get(next).getPosition()==null){
+					getNext(next);
+				}
+				else{
+					//skip this point
+					System.out.println("skipping for " + next);
+				}
+			}
+		}
+		else {//if somehow, the input has duplicate points which is not allowed according to the assignment:
+			for(PosPoint p : posPoints){
+				p.setPosition(0, true);
+			}
+		}
 		
-		/*
-		 * This is where the magic happens
-		 */
-		// 100 may also be another number
-		if(numberOfPoints <= 100){
-			/*
-			 * Bruteforce the problem to find an optimal solution
-			 */
+		for(PosPoint p : posPoints){
+			if(p.getPosition()==null){
+				System.out.println(p.toString());
+				p.setPosition(0, true);
+			}
 		}
-		else{
-			/*
-			 * Smart solution that might not find the optimal solution but finishes 
-			 * in time (5 minutes on peach).
-			 */
-		}
-
+		
 		return posPoints;
 	}
 
 	public SliderPoint[] find1SliderSolution(){
-		//System.out.println("point: " + sliderPoints[0].getX() + ", " + sliderPoints[0].getY());
-		//System.out.println("bounds: " + sliderPoints[0].getLeftX() + ", " + sliderPoints[0].getRightX() + ", " + sliderPoints[0].getTopY());
-		double growth = 0.0001;
+		debugPrint("point: " + sliderPoints[0].getX() + ", " + sliderPoints[0].getY());
+		debugPrint("bounds: " + sliderPoints[0].getLeftX() + ", " + sliderPoints[0].getRightX() + ", " + sliderPoints[0].getTopY());
+		double growth = 0.1;
 		xPointArray = MergeSort.sort(sliderPoints);
 		CalcSlider(sliderPoints,xPointArray, growth);
 		return sliderPoints;
@@ -222,54 +306,48 @@ public class Plane {
 	
 	void CalcSlider(SliderPoint[] sArray, int[] pointer, double growth) {  
 		boolean triggered = false;
-		int i;																								//sliderPoints must be sorted on x-coordinates
-		double minHeight = 0;
-		double maxHeight = 100;
+		int i;																									//sliderPoints must be sorted on x-coordinates
 		while (!triggered) {
 			for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].calcGrowth(growth);}
-			for (i = sliderPoints.length -1; i >= 0; i--) {														//for every point, from right to left
-				if ( sliderPoints[pointer[i]].getMayGrow() != true ) {											//if it doesn't have clearance to grow yet
-					//System.out.println("examine new situation for point " + sliderPoints[pointer[i]].getX() + "," + sliderPoints[pointer[i]].getY() );
+			for (i = sliderPoints.length -1; i >= 0; i--) {											//for every point, from right to left
+				if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
+					debugPrint("examine new situation for point " + sliderPoints[pointer[i]].getX() + "," + sliderPoints[pointer[i]].getY() );
 					if ( checkNewSituation(sliderPoints, xPointArray, i, growth) == false ) {					//check if the new situation would work	
 						triggered = true;
-						i = -1;
+						break;
 					}
 				}
 			}
 			if (!triggered) {
-				height = (float) sliderPoints[pointer[0]].getNEWTopY() - sliderPoints[pointer[0]].getY(); 		// new height
-				System.out.println("new height: " + height);
 				for (i = sliderPoints.length -1; i >= 0; i--) {
-					sliderPoints[pointer[i]].applyChanges();													//grow the labels
-					//System.out.println("leftX, rightX, height: " + sliderPoints[pointer[i]].getLeftX() + ", " + sliderPoints[pointer[i]].getRightX() + ", " + height);
+					sliderPoints[pointer[i]].applyChanges();
+					height = (float) sliderPoints[pointer[i]].getTopY() - sliderPoints[pointer[i]].getY();
+					debugPrint("leftX, rightX, height: " + sliderPoints[pointer[i]].getLeftX() + ", " + sliderPoints[pointer[i]].getRightX() + ", " + height);
 					sliderPoints[pointer[i]].setMayGrow(false);
 				}
-				minHeight = height;
 			}
 		}
-		System.out.println("MAXIMUM HEIGHT REACHED: " + height );
 	}
 	
 	boolean checkNewSituation(SliderPoint[] sArray, int[] pointer, int pointLoc, double growth) {
-		int i = pointLoc;												//current label
-		int j = pointLoc - 1;											//label checked for collision
+		int i = pointLoc;
+		int j = pointLoc - 1;
 		if (i==0) {
-			//System.out.println("clear, the last point");
-			return true;}	//the last label is always moveable			
+			debugPrint("clear, the last point");return true;}																//the last label is always moveable			
 		while (j >= 0  && (sliderPoints[pointer[j]].getX() > sliderPoints[pointer[i]].getNEWLeftX()- (sliderPoints[pointer[i]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX()))) {		//bound for possible collisions
-			//System.out.println("i:" + i + " j:" + j);
-			if ( (sliderPoints[pointer[i]].getNEWLeftX() <  sliderPoints[pointer[j]].getNEWRightX()) &&			//if x-coordinates overlap AND
-				((sliderPoints[pointer[i]].getNEWTopY()  >= sliderPoints[pointer[j]].getNEWTopY()    &&			//y-coordinates overlap
-				  sliderPoints[pointer[i]].getY() 	   <= sliderPoints[pointer[j]].getNEWTopY())   	 ||
+			debugPrint("i:" + i + " j:" + j);
+			if ( (sliderPoints[pointer[i]].getNEWLeftX() <  sliderPoints[pointer[j]].getNEWRightX()) &&
+				((sliderPoints[pointer[i]].getNEWTopY()  >= sliderPoints[pointer[j]].getNEWTopY()    &&
+				  sliderPoints[pointer[i]].getY() 	   <= sliderPoints[pointer[j]].getNEWTopY())   ||
 				  sliderPoints[pointer[i]].getNEWTopY()  >= sliderPoints[pointer[j]].getY() 		 &&
-				  sliderPoints[pointer[i]].getY() 	   <= sliderPoints[pointer[j]].getY()) ) {					//we have a collision	
+				  sliderPoints[pointer[i]].getY() 	   <= sliderPoints[pointer[j]].getY()) ) {			//check collision
 				
-				//System.out.println("collision detected");
+				System.out.println("collision detected");
 				double toShift = sliderPoints[pointer[j]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX();
 				if (toShift <= (sliderPoints[pointer[j]].getNEWRightX() - sliderPoints[pointer[j]].getX())) {	//check if current label can shift
 					sliderPoints[pointer[j]].setNEWLeftX(sliderPoints[pointer[j]].getNEWLeftX() - toShift);
 					sliderPoints[pointer[j]].setNEWRightX(sliderPoints[pointer[j]].getNEWRightX() - toShift);
-					sliderPoints[pointer[j]].setDirection("LEFT");												//if so, shift
+					sliderPoints[pointer[j]].setDirection("LEFT");													//if so, shift
 				}
 //				else if (toShift == (sliderPoints[pointer[j]].getNEWRightX() - sliderPoints[pointer[j]].getX())) {		//if it fits exactly, shift, but finish
 //					sliderPoints[pointer[j]].setNEWLeftX(sliderPoints[pointer[j]].getNEWLeftX() - toShift);
@@ -278,27 +356,28 @@ public class Plane {
 //					System.out.println("MAXIMUM HEIGHT REACHED: " + (sliderPoints[pointer[i]].getTopY() - sliderPoints[pointer[i]].getY()) );
 //					return false;
 //				}
-				else {																							//if not,
+				else {
 					sliderPoints[pointer[i]].setMayGrow(false);
-					//System.out.println("NOT CLEAR, shifting would sever the label from its point");
-					return false;																				//we have reached our max size 
+					debugPrint("not clear, shifting would sever the label from its point");
+					debugPrint("MAXIMUM HEIGHT REACHED: " + (sliderPoints[pointer[i]].getTopY() - sliderPoints[pointer[i]].getY()) );
+					return false;																					//if not, we have reached our max size 
 					}
-				if ( checkNewSituation(sliderPoints, pointer, j, growth) == true ) {							//check if colliding label can move
+				if ( checkNewSituation(sliderPoints, pointer, j, growth) == true ) {		//check if colliding label can move
 					sliderPoints[pointer[i]].setMayGrow(true);
-					//System.out.println("CLEAR, the others made room");
-					return true;																				//if so, you can move too
+					debugPrint("clear, the others made room");
+					return true;																//if so, than you can move too
 				}
 				else{ 
-					sliderPoints[pointer[i]].setMayGrow(false);													//if not
-					//System.out.println("NOT CLEAR, the others couldnt made room");
+					sliderPoints[pointer[i]].setMayGrow(false);
+					debugPrint("not clear, the others couldnt made room");
 					return false;
-					}																			 				//you can't grow either
+					}																			//if not, you can't grow either
 			}
-			j--;																								//if there are no collisions, check the next label
-			//System.out.println(" height: " + (sliderPoints[pointer[i]].getNEWTopY()-sliderPoints[pointer[i]].getY()) + " new j: " + j);
+			j--;												//if there are no collisions, you can grow
+			debugPrint(" height: " + (sliderPoints[pointer[i]].getNEWTopY()-sliderPoints[pointer[i]].getY()) + " new j: " + j);
 		}
 		sliderPoints[pointer[i]].setMayGrow(true);
-		//System.out.println("CLEAR, no collision left/found");
+		debugPrint("clear, no collision left/found");
 		return true;  											//all collisions are solved
 	}
 	
@@ -332,7 +411,7 @@ public class Plane {
 	 * @param height, the height of the labels to check for.
 	 * @return a hashmap of all labels to an arraylist of labels they collide with. null if a dead point exists.
 	 */
-	public HashMap<Label, ArrayList<Label>> findCollisions(ArrayList<Label> labels, ArrayList<Clause> clauses, QuadTree tree, double height){			
+	public HashMap<Label, ArrayList<Label>> findCollisions2pos(ArrayList<Label> labels, ArrayList<Clause> clauses, QuadTree tree, double height){			
 		HashMap<Label, ArrayList<Label>> collisions = new HashMap<Label, ArrayList<Label>>();//make a new hashmap of labels to arraylist of labels
 		if(posPoints!=null){//if we are not doing 1slider
 			tree.init(labels, height, aspectRatio, 10000);//initialize the quadtree
@@ -411,6 +490,88 @@ public class Plane {
 		return collisions;//return the list of collisions
 	}
 	
+	public HashMap<Label, ArrayList<Label>> findCollisions4Pos(ArrayList<Label> labels, ArrayList<Clause> clauses, QuadTree tree, double height){			
+		HashMap<Label, ArrayList<Label>> collisions = new HashMap<Label, ArrayList<Label>>();//make a new hashmap of labels to arraylist of labels
+		tree.init(labels, height, aspectRatio, 10000);//initialize the quadtree
+		setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
+		
+		ArrayList<Label> deadLabels = new ArrayList<Label>();//to avoid the editing iteration items while iterating, add the dead labels to an arraylist
+		
+		for(PosPoint p: posPoints){//for all points
+			for(Label l: p.getLabels()){//for all labels in the point
+				if(l.isHasIntersect()){//if the label collides with other labels
+					if(!containsPoint(findIntersectionQuad(tree,l),l).isEmpty()){
+						//if the list of contained points is not empty for the specified label
+						clauses.add(new Clause(l.toClause().negation(),
+								l.toClause().negation()));//add a clause to the clauses list that will force the negation of this table to be true;
+						deadLabels.add(l);//add this label to the arraylist of dead labels
+					}
+				}
+				else{
+					//the label is safe, most likely alive.
+					//alive check is done later, to assure that labels that became alive by deleting a dead label are also present. 
+				}
+			}			
+		}
+		for(Label l: deadLabels){//for all labels that have to be removed
+			removeLabel(l, labels);//remove the label from the labels list.
+			if(l.getBoundPoint().getLabels().isEmpty()){//if somehow all labels are dead for a point
+				//System.out.println("critical error! the point " + l.getBoundPoint() + " lost all labels!");
+				return null;//return null as collision value, associated with this error
+			}
+		}
+		
+		tree.init(labels, height, aspectRatio, 10000);//initialize the quadtree
+		setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
+		
+		ArrayList<Label> alive;//arraylist of all alive labels, to be removed after the loop is done.
+
+		for(PosPoint p: posPoints){//for all points
+			alive = new ArrayList<Label>();//make a new alive arraylist
+			for(Label l: p.getLabels()){//for all labels in the point
+				if(!l.isHasIntersect()){//if the label has no intersections
+					alive.add(l);//it is alive, so add to the alive list
+					
+				}
+				else {
+					//label is not alive, we will consider pending labels later.
+				}
+			}	
+			if(!alive.isEmpty()){//if the alive array is not empty
+				Label aliveLabel = alive.get(0);//get the first alive label in the list
+				clauses.add(new Clause(aliveLabel.toClause(),aliveLabel.toClause()));
+				p.setPosition(aliveLabel.getShift(), aliveLabel.isTop());//set the alive label as the orientation.
+				//if a point has an alive label, we do not have to consider other collisions for this point.
+				for(Label l: p.getLabels()){//for all labels associated with this point
+					if(!l.equals(aliveLabel)){
+					//System.out.println("removed " + l.toString());
+					labels.remove(l);//TODO remove the label from the list, not remove it in the point itself, for later use.				
+					//TODO possibly remove the not alive labels, as they should never be chosen.
+					}
+				}
+				//TODO choose the alive label, one of the labels in alive
+			}
+			else{
+				//if no alive labels, we should continue to the pending labels
+			}
+		}
+		
+		System.out.println(">" + deadLabels);
+		
+		tree.init(labels, height, aspectRatio, 10000);//now only use the leftover labels
+		setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
+		
+		ArrayList<Label> overlap;//the list of labels the labels overlaps with
+		for(Label l: labels){//for all retained labels
+			if(l.isHasIntersect()){//if it has an intersection
+				overlap = findIntersectionQuad(tree, l);//find the labels this label intersects with
+				collisions.put(l, overlap);//put them in the mapping
+			}
+		}
+		return collisions;//return the list of collisions
+	}
+	
+	
 	/**
 	 * 
 	 * @param collisions: list of all collisions found by the findCollisions method.
@@ -447,8 +608,6 @@ public class Plane {
 	public PosPoint[] getPosPoints() {
 		return posPoints;
 	}
-
-	private double delta = 0.0000000001;//difference of border
 
 	public boolean intersects(Label la, Label lb){
 
@@ -599,9 +758,9 @@ public class Plane {
 	 public boolean contains(Rectangle2D rec, double x, double y){
 	     double mx = rec.getX();//TODO find out why i cant add delta here, it causes stack overflows.
 	     double my = rec.getY();
-	     double w = rec.getWidth()-delta;
-	     double h = rec.getHeight()-delta;
-	     return w > 0 && h > 0 && x >= mx && x < mx + w && y >= my && y < my + h;
+	     double w = rec.getWidth();
+	     double h = rec.getHeight();
+	     return w > 0 && h > 0 && x > mx && x < mx + w && y > my && y < my + h;
 	 }
 	 
 	 public void findIntersections(ArrayList<Label> labels){
@@ -668,13 +827,52 @@ public class Plane {
 		 return true;//in any other case return true, as there exists a solution to this problem.
 	 }
 	 
+	 public boolean checkTwoSatisfiability4pos(ArrayList<Clause> clauseList){
+		 HashSet<String> variables = new HashSet<String>();//to be set of all string values of the labels. 
+		 for(Clause clause: clauseList){//for each clause in the clauselist
+			 variables.add(clause.getFirstStringValue());//add the first string value of the clause
+			 variables.add(clause.getSecondStringValue());//add the second string value of the clause
+			 //this will add all "variables" used in the 2-sat check.
+		 }
+		 
+		 DirectedGraph graph = new DirectedGraph();//make a new directed graph
+
+		 for (String variable: variables) {//for all variables in the variables set
+	         graph.addNode(new ClauseValue(variable, true));//make a node for the true variant of this variable
+	         graph.addNode(new ClauseValue(variable, false));//make a node for the false variant of this variable.
+		 }
+		 
+		 for (Clause clause: clauseList) {//for all clauses
+	         graph.addEdge(clause.getFirstValue().negation(), clause.getSecondValue());//add the implication (~a=>b)
+	         graph.addEdge(clause.getSecondValue().negation(), clause.getFirstValue());//add the implication (~b=>a)
+	     }
+
+		 HashMap<ClauseValue, Integer> stronglyConnected = stronglyConnectedComponents(graph);
+		 //save the strongly connected components as a mapping from label to the number of the scc
+		 
+		 for(String variable: variables){//for all variables used
+			 boolean a = stronglyConnected.get(new ClauseValue(variable, true)).equals(
+					 stronglyConnected.get(new ClauseValue(variable, false)));
+			 boolean b = stronglyConnected.get(new ClauseValue(variable, true)).equals(
+					 stronglyConnected.get(new ClauseValue(pointINV.get(variable), true)));
+			 boolean c = stronglyConnected.get(new ClauseValue(variable, true)).equals(
+					 stronglyConnected.get(new ClauseValue(pointINV.get(variable), false)));
+			 if(a && b && c){
+				 //if the number of the scc is same for both the negation and the original, we have a logical contradiction, thus false 
+				 return false;//so, return false, as the 2-sat is not satisfied.
+			 }
+		 }
+		 minGraph = graph;
+		 return true;//in any other case return true, as there exists a solution to this problem.
+	 }
+	 
 	 /**
 	  * 
 	  * @param graph: the directed graph.
 	  * @return a mapping from clauseValues to integers, with integer being the connected component the clauseValue is part of
 	  */
 	 public HashMap<ClauseValue, Integer> stronglyConnectedComponents(DirectedGraph graph) {
-	 	debugPrint(graph.getGraph().toString());//DEBUG
+	 	debugPrint("graph:" + graph.getGraph().toString());//DEBUG
         Stack<ClauseValue> visitOrder = dfsOrder(reverseGraph(graph));
         //do a depth first search on the reversed iteration order of the graph, which will be your visit order.
 
