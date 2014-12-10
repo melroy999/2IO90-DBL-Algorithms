@@ -26,6 +26,7 @@ public class MapLabeler {
 	public MapLabeler() throws IOException{
 		try{
 			if(local){
+			    System.out.println("Gib input pl0x");
 				sc = new Scanner(input);
 			}
 			else{
