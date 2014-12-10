@@ -31,7 +31,7 @@ public class Plane {
 	
 	private Map<String,String> pointINV;
 
-	private double delta = 0.000000000001;//difference of border
+	private double delta = 0.001;//difference of border
 	
 	private boolean debug = true;
 
