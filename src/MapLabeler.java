@@ -15,31 +15,32 @@ import java.util.Scanner;
 public class MapLabeler {
 	private Scanner sc;
 
-	private File input = new File("2pos100.txt");
-	private File output = new File("2pos100_solved.txt");
+	private File input = new File("2pos_10000.txt");
+	private File output = new File("2pos10000_solved.txt");
 
 	private Plane plane;
 	private PlacementModel pModel;
 
-	public static final boolean local = true;
+	public static final boolean local = false;
 
 	public MapLabeler() throws IOException{
-		long start = System.currentTimeMillis();
 		try{
 			if(local){
 				sc = new Scanner(input);
 			}
 			else{
+			    System.out.println("Gib input pl0x");
 				sc = new Scanner(System.in);
 			}
 		} catch (FileNotFoundException e){
 			System.out.println("Input file not found: " + input.getName());;
 		}
 		readInput();
+		long start = System.currentTimeMillis();
 		solvePlacementProblem();
 		writeOutput();
 		long stop = System.currentTimeMillis();
-		System.out.println("Time elapsed: "+(stop-start)/1000);
+		System.out.println("Time elapsed: "+(stop-start));
 	}
 
 	public void readInput(){
