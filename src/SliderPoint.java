@@ -1,3 +1,6 @@
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 
 public class SliderPoint extends Point {
 	public enum slideDirection{LEFT,RIGHT}
@@ -58,6 +61,10 @@ public class SliderPoint extends Point {
 	public double getS(){
 		if (rightX-leftX == 0) { System.out.println("WTF M8");}
 		double s = (rightX-this.getX())/(rightX-leftX);
+		s = ((float)((long)(s*1000000000)))/1000000000f;
+		BigDecimal lel = new BigDecimal(s);
+		lel = lel.setScale(9, RoundingMode.FLOOR);
+		s = lel.doubleValue();		
 		return s;
 	}
 	
