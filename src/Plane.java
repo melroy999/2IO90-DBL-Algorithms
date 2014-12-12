@@ -305,7 +305,7 @@ public class Plane {
 	}
 
 	public SliderPoint[] find1SliderSolution(){
-		delta= 0.000001;
+		delta= 0.0000000001;
 		xPointArray = MergeSort.sort(sliderPoints);
 		CalcSlider(sliderPoints,xPointArray);
 		return sliderPoints;
@@ -314,7 +314,7 @@ public class Plane {
 	void CalcSlider(SliderPoint[] sArray, int[] pointer) {  
 		int i;																									//sliderPoints must be sorted on x-coordinates
 		double minH = 0;
-		double maxH = 20;
+		double maxH = 10000;
 		double currentH;
 		while (maxH-minH >= delta) {
 			boolean mayContinue = true;
