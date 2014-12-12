@@ -21,7 +21,7 @@ public class MapLabeler {
 	private Plane plane;
 	private PlacementModel pModel;
 
-	public static final boolean local = false;
+	public static final boolean local = true;
 
 	public MapLabeler() throws IOException{
 		try{
