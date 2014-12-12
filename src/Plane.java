@@ -31,9 +31,11 @@ public class Plane {
 	
 	private Map<String,String> pointINV;
 
-	private double delta = 0.000000000001;//difference of border
+	private double delta = 0.001;//difference of border
 	
-	private boolean debug = !true;
+	private boolean debug = true;
+	
+	ArrayList<ClauseValue> deadLabelsClauses;
 
 	//public ArrayList<Vector2i> points;
 	//public ArrayList<Label> labels;
@@ -188,7 +190,7 @@ public class Plane {
 	 * and the orientation of every label. This method returns the orientation array.
 	 */
 	public PosPoint[] find4PosSolution(){
-		delta = 0.000001;
+		delta = 0.1;
 		//TODO: we might have to use doubles, as the values aren't that accurate if a not fitting start value is used.
 	    int[] xSortedOrder = MergeSort.sort(posPoints);//sorting the points on x-cor, referencing by index in this array.
 	    
@@ -203,7 +205,7 @@ public class Plane {
 		
 		pointINV = new HashMap<String,String>();
 		
-		height = 25;//TODO initial height of label, to be calculated by jorrick's max-height algorithm.		
+		height = 	40;//TODO initial height of label, to be calculated by jorrick's max-height algorithm.		
 		double minHeight = (aspectRatio < 1) ? 1 : (1/aspectRatio);//TODO the minimal possible height of a label, could be replaced by the actual minimal.
 		double maxHeight = height*2;//2x the maximal height, so that we start with the calculated max-height in the loop.
 		int rounds = 0;//amount of completed loops
@@ -265,17 +267,20 @@ public class Plane {
 		height = Math.floor(height*(1/(delta*10)))*delta*10;
 		debugPrint("The height solution is: " + height + ", this took " + rounds + " loops.");//DEBUG
 		
+		/*
+		 * TODO: currently strongly connected components with multiple labels of a point in it can still be chosen,
+		 * this causes overlap and should be solved.
+		 */
 		if(minGraph!=null){
 			Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));
 			debugPrint(order.toString());	
 			while(!order.isEmpty()){
 				ClauseValue next = order.pop();
-				if(clausePoint.get(next).getPosition()==null){
+				if(clausePoint.get(next).getPosition()==null && !deadLabelsClauses.contains(next)){
 					getNext(next);
 				}
 				else{
 					//skip this point
-					System.out.println("skipping for " + next);
 				}
 			}
 		}
@@ -285,10 +290,12 @@ public class Plane {
 			}
 		}
 		
+		int i = 1;
 		for(PosPoint p : posPoints){
 			if(p.getPosition()==null){
-				System.out.println(p.toString());
-				p.setPosition(0, true);
+				System.out.println(i + ": Error, point " + p.toString() + " has no position.");
+				i++;
+				p.setPosition(1, true);
 			}
 		}
 		
@@ -469,7 +476,7 @@ public class Plane {
 			tree.init(labels, height, aspectRatio, 10000);//initialize the tree again, now without the dead labels.
 			setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
 			
-			ArrayList<Label> alive;//arraylist of all alive labels, to be removed after the loop is done.
+			ArrayList<Label> alive;//arrayList of all alive labels, to be removed after the loop is done.
 			for(PosPoint p: posPoints){//for all points
 				alive = new ArrayList<Label>();//make a new alive arraylist
 				for(Label l: p.getLabels()){//for all labels in the point
@@ -518,22 +525,45 @@ public class Plane {
 		ArrayList<Label> deadLabels = new ArrayList<Label>();//to avoid the editing iteration items while iterating, add the dead labels to an arraylist
 		
 		for(PosPoint p: posPoints){//for all points
+			ArrayList<Label> dead = new ArrayList<Label>();
 			for(Label l: p.getLabels()){//for all labels in the point
 				if(l.isHasIntersect()){//if the label collides with other labels
 					if(!containsPoint(findIntersectionQuad(tree,l),l).isEmpty()){
 						//if the list of contained points is not empty for the specified label
-						clauses.add(new Clause(l.toClause().negation(),
-								l.toClause().negation()));//add a clause to the clauses list that will force the negation of this table to be true;
+						//clauses.add(new Clause(l.toClause().negation(),
+						//		l.toClause().negation()));//add a clause to the clauses list that will force the negation of this table to be true;
 						deadLabels.add(l);//add this label to the arraylist of dead labels
+						dead.add(l);
+						//System.out.println("Label " + l + " is dead.");					
 					}
 				}
 				else{
 					//the label is safe, most likely alive.
 					//alive check is done later, to assure that labels that became alive by deleting a dead label are also present. 
 				}
-			}			
+			}
+			if(dead.size()==3){
+				ArrayList<Label> temp = p.getLabels();
+				temp.removeAll(dead);
+				clauses.add(new Clause(temp.get(0).toClause(),temp.get(0).toClause()));
+			}
+			else if(dead.size()==2){
+				ArrayList<Label> temp = p.getLabels();
+				temp.removeAll(dead);
+				clauses.add(new Clause(temp.get(0).toClause(),temp.get(1).toClause()));
+			}
+			else if(dead.size()==1){
+				ArrayList<Label> temp = p.getLabels();
+				temp.removeAll(dead);
+				clauses.add(new Clause(dead.get(0).toClause().negation(),dead.get(0).toClause().negation()));
+				//clauses.add(new Clause(temp.get(0).toClause(),temp.get(1).toClause()));
+				//clauses.add(new Clause(temp.get(1).toClause(),temp.get(2).toClause()));
+				//clauses.add(new Clause(temp.get(2).toClause(),temp.get(0).toClause()));
+			}
 		}
+		deadLabelsClauses = new ArrayList<ClauseValue>();
 		for(Label l: deadLabels){//for all labels that have to be removed
+			deadLabelsClauses.add(l.toClause());
 			removeLabel(l, labels);//remove the label from the labels list.
 			if(l.getBoundPoint().getLabels().isEmpty()){//if somehow all labels are dead for a point
 				//System.out.println("critical error! the point " + l.getBoundPoint() + " lost all labels!");
@@ -575,8 +605,6 @@ public class Plane {
 				//if no alive labels, we should continue to the pending labels
 			}
 		}
-		
-		System.out.println(">" + deadLabels);
 		
 		tree.init(labels, height, aspectRatio, 10000);//now only use the leftover labels
 		setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
@@ -848,6 +876,7 @@ public class Plane {
 	 }
 	 
 	 public boolean checkTwoSatisfiability4pos(ArrayList<Clause> clauseList){
+		 HashMap<PosPoint, Integer> points = new HashMap<PosPoint, Integer>();
 		 HashSet<String> variables = new HashSet<String>();//to be set of all string values of the labels. 
 		 for(Clause clause: clauseList){//for each clause in the clauselist
 			 variables.add(clause.getFirstStringValue());//add the first string value of the clause
@@ -870,17 +899,109 @@ public class Plane {
 		 HashMap<ClauseValue, Integer> stronglyConnected = stronglyConnectedComponents(graph);
 		 //save the strongly connected components as a mapping from label to the number of the scc
 		 
+		 //TODO possibly avoid inverse points as variables in this loop? as every variable is checked twice now
+		 //or even 4 times, considering negations.
+		 
+		 HashSet<Integer> sccs;
+		 HashMap<Integer, ArrayList<ClauseValue>> sccsList;
 		 for(String variable: variables){//for all variables used
-			 boolean a = stronglyConnected.get(new ClauseValue(variable, true)).equals(
-					 stronglyConnected.get(new ClauseValue(variable, false)));
-			 boolean b = stronglyConnected.get(new ClauseValue(variable, true)).equals(
-					 stronglyConnected.get(new ClauseValue(pointINV.get(variable), true)));
-			 boolean c = stronglyConnected.get(new ClauseValue(variable, true)).equals(
-					 stronglyConnected.get(new ClauseValue(pointINV.get(variable), false)));
-			 if(a && b && c){
-				 //if the number of the scc is same for both the negation and the original, we have a logical contradiction, thus false 
-				 return false;//so, return false, as the 2-sat is not satisfied.
+			 /*	
+			  * |---------|---------|
+			  * |	 2	  |	   1	|
+			  * |---------x---------|
+			  * |	 3	  |	   4	|
+			  * |---------|---------|
+			  */
+			 
+			 //avoid the use of normal boolean expressions, better use the size of a set as an indication.
+			 sccs = new HashSet<Integer>();
+			 sccsList = new HashMap<Integer, ArrayList<ClauseValue>>();
+			 
+			 sccs.add(stronglyConnected.get(new ClauseValue(variable, true)));			 
+			 sccs.add(stronglyConnected.get(new ClauseValue(variable, false)));			 
+			 sccs.add(stronglyConnected.get(new ClauseValue(pointINV.get(variable), true)));			 
+			 sccs.add(stronglyConnected.get(new ClauseValue(pointINV.get(variable), false)));
+			 
+			 /*
+			  * By using this method of validating the configuration, strongly connected components may exist with 2 or 3
+			  * of the labels of the point. If this happens, and if 2 labels are in A, and 2 labels are in B, there is not
+			  * a solution either. This part needs refining, as certain solutions might still not be valid.
+			  * Case:	1				2				3				4				5
+			  * Label	Group			Group			Group			Group			Group
+			  * 1		A				A				A				A				A
+			  * 2		A				A				A				B				A
+			  * 3		A				B				B				C				A
+			  * 4		B				B				C				D				A
+			  * 	Label 4 chosen	No solution		Either 3 or 4		All can be		None are valid
+			  * 									should be chosen	chosen.
+			  * 
+			  *  WARNING: this can be in ANY order! A lot of logic could be involved!
+			  *  TODO: possibly use this to choose a correct orientation already in this part of the program,
+			  *  as all information is available here. Can this be done? possibly not, as we have to choose one route 
+			  *  through the graph? Another option is listing the valid options.
+			  *  
+			  *  Even if there are valid options, does this mean that there is an solution for the complete picture?
+			  *  if point A can only have a solution if connected component B is chosen, and another point B does not
+			  *  allow connected component B as it has its negative in the graph, can this path still be chosen? 
+			  *  Can we change the path halfway through?
+			  */
+			 
+			 ArrayList<ClauseValue> clauses = new ArrayList<ClauseValue>();
+			 clauses.add(new ClauseValue(variable, true));
+			 clauses.add(new ClauseValue(variable, false));
+			 clauses.add(new ClauseValue(pointINV.get(variable), true));
+			 clauses.add(new ClauseValue(pointINV.get(variable), false));
+			 
+			 //Case 4
+			 if(sccs.size()==4){
+				 //Do nothing, we have a valid option, any can be chosen.
+				 //points.put(clausePoint.get(new ClauseValue(variable, true)),1);//TODO find a way to give the position
 			 }
+			 //Case 3
+			 else if(sccs.size()==3){
+				 //A valid configuration will exist, we only have to mark one of the correct options.
+				 //clausePoint.get(new ClauseValue(variable, true));
+				 
+			 }
+			 //Case 2, Case 1
+			 else if(sccs.size()==2){//A valid option MAY exist, if three of the labels are equal.
+				 int controlNumber = stronglyConnected.get(clauses.get(0));
+				 ClauseValue otherOption;
+				 int timesFound = 1;
+				 
+				 for(int i = 1; i < clauses.size(); i++){
+					 if(controlNumber == stronglyConnected.get(clauses.get(i))){
+						 timesFound++;
+					 }
+					 else {
+						 otherOption = clauses.get(i);
+					 } 
+				 }
+				 
+				 if(timesFound==2){
+					 return false;//it is split, so impossible to solve
+				 }
+				 else if(timesFound==1){
+					 //new ClauseValue(variable,true) is the valid option.
+				 }
+				 else if(timesFound==3){
+					 //otherOption is the valid option.
+				 }
+			 }
+			 //Case 5
+			 else {
+				 //No chance, they are all in the connected component
+				 return false;
+			 }
+			 
+			 
+			 boolean a = stronglyConnected.get(new ClauseValue(variable, true)).equals(
+					 stronglyConnected.get(new ClauseValue(variable, false)));//1.Group = 2.Group
+			 boolean b = stronglyConnected.get(new ClauseValue(variable, true)).equals(
+					 stronglyConnected.get(new ClauseValue(pointINV.get(variable), true)));//1.Group = 4.Group
+			 boolean c = stronglyConnected.get(new ClauseValue(variable, true)).equals(
+					 stronglyConnected.get(new ClauseValue(pointINV.get(variable), false)));//1.Group = 3.Group
+			 
 		 }
 		 minGraph = graph;
 		 return true;//in any other case return true, as there exists a solution to this problem.
@@ -892,7 +1013,7 @@ public class Plane {
 	  * @return a mapping from clauseValues to integers, with integer being the connected component the clauseValue is part of
 	  */
 	 public HashMap<ClauseValue, Integer> stronglyConnectedComponents(DirectedGraph graph) {
-	 	debugPrint("graph:" + graph.getGraph().toString());//DEBUG
+	 	//debugPrint("graph:" + graph.getGraph().toString());//DEBUG
         Stack<ClauseValue> visitOrder = dfsOrder(reverseGraph(graph));
         //do a depth first search on the reversed iteration order of the graph, which will be your visit order.
 
