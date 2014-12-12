@@ -31,7 +31,7 @@ public class Plane {
 	
 	private Map<String,String> pointINV;
 
-	private double delta = 0.000000000001;//difference of border
+	private double delta = 0.001;//difference of border
 	
 	private boolean debug = true;
 	
@@ -572,88 +572,108 @@ public class Plane {
 	
 	
 	public SliderPoint[] find1SliderSolution(){
-		debugPrint("point: " + sliderPoints[0].getX() + ", " + sliderPoints[0].getY());
-		debugPrint("bounds: " + sliderPoints[0].getLeftX() + ", " + sliderPoints[0].getRightX() + ", " + sliderPoints[0].getTopY());
-		double growth = 0.1;
+		delta= 0.1;
 		xPointArray = MergeSort.sort(sliderPoints);
-		CalcSlider(sliderPoints,xPointArray, growth);
+		CalcSlider(sliderPoints,xPointArray);
 		return sliderPoints;
 	}
 	
-	void CalcSlider(SliderPoint[] sArray, int[] pointer, double growth) {  
-		boolean triggered = false;
+	void CalcSlider(SliderPoint[] sArray, int[] pointer) {  
 		int i;																									//sliderPoints must be sorted on x-coordinates
-		while (!triggered) {
-			for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].calcGrowth(growth);}
+		double minH = 0;
+		double maxH = 20;
+		double currentH;
+		while (maxH-minH > delta) {
+			boolean mayContinue = true;
+			currentH = (maxH + minH)/2;
+			debugPrint("Current: " + currentH);
+			for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].setNEWsize(currentH);}
 			for (i = sliderPoints.length -1; i >= 0; i--) {											//for every point, from right to left
 				if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
-					debugPrint("examine new situation for point " + sliderPoints[pointer[i]].getX() + "," + sliderPoints[pointer[i]].getY() );
-					if ( checkNewSituation(sliderPoints, xPointArray, i, growth) == false ) {					//check if the new situation would work	
-						triggered = true;
-						break;
+					debugPrint("examine new situation for point (" + sliderPoints[pointer[i]].getX() + "," + sliderPoints[pointer[i]].getY() + ")" );
+					if ( checkNewSituation(sliderPoints, xPointArray, i) == false ) {					//check if the new situation would work	
+						mayContinue = false;
+						maxH = currentH;															//current becomes up
+						i = -1;																		//quits loop
 					}
 				}
 			}
-			if (!triggered) {
+			if (mayContinue) {
 				for (i = sliderPoints.length -1; i >= 0; i--) {
-					sliderPoints[pointer[i]].applyChanges();
-					height = (float) sliderPoints[pointer[i]].getTopY() - sliderPoints[pointer[i]].getY();
-					debugPrint("leftX, rightX, height: " + sliderPoints[pointer[i]].getLeftX() + ", " + sliderPoints[pointer[i]].getRightX() + ", " + height);
 					sliderPoints[pointer[i]].setMayGrow(false);
+				}
+				minH = currentH;				
+			}
+			debugPrint("new max and min: " + maxH + ", " +  minH);
+		}
+		
+		//FINAL LOOP TO PLACE ALL LABELS FOR THE MAX HEIGHT
+		for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].setNEWsize(minH);}
+		for (i = sliderPoints.length -1; i >= 0; i--) {											//for every point, from right to left
+			if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
+				if ( checkNewSituation(sliderPoints, xPointArray, i) == false ) {				//check if the new situation would work																//current becomes up
+					i = -1;																		
+					System.out.println("WOOPS DIT ZAG IK NIET AANKOMEN");						//NIET GOED HELEMAAL NIET GOED
 				}
 			}
 		}
+		//Apply changes made in FINAL LOOP
+		for (i = sliderPoints.length -1; i >= 0; i--) {
+			sliderPoints[pointer[i]].applyChanges();
+		}
+		height = minH;
 	}
 	
-	boolean checkNewSituation(SliderPoint[] sArray, int[] pointer, int pointLoc, double growth) {
+	boolean checkNewSituation(SliderPoint[] sArray, int[] pointer, int pointLoc) {
 		int i = pointLoc;
 		int j = pointLoc - 1;
 		if (i==0) {
 			debugPrint("clear, the last point");return true;}																//the last label is always moveable			
 		while (j >= 0  && (sliderPoints[pointer[j]].getX() > sliderPoints[pointer[i]].getNEWLeftX()- (sliderPoints[pointer[i]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX()))) {		//bound for possible collisions
-			debugPrint("i:" + i + " j:" + j);
+			debugPrint(" point (" + sliderPoints[pointer[i]].getX() + "," + sliderPoints[pointer[i]].getY() + ") may collide with (" + sliderPoints[pointer[j]].getX() + "," + sliderPoints[pointer[j]].getY() + ")" );
 			if ( (sliderPoints[pointer[i]].getNEWLeftX() <  sliderPoints[pointer[j]].getNEWRightX()) &&
 				((sliderPoints[pointer[i]].getNEWTopY()  >= sliderPoints[pointer[j]].getNEWTopY()    &&
 				  sliderPoints[pointer[i]].getY() 	   <= sliderPoints[pointer[j]].getNEWTopY())   ||
 				  sliderPoints[pointer[i]].getNEWTopY()  >= sliderPoints[pointer[j]].getY() 		 &&
 				  sliderPoints[pointer[i]].getY() 	   <= sliderPoints[pointer[j]].getY()) ) {			//check collision
 				
-				System.out.println("collision detected");
+				debugPrint("  collision detected");
 				double toShift = sliderPoints[pointer[j]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX();
 				if (toShift <= (sliderPoints[pointer[j]].getNEWRightX() - sliderPoints[pointer[j]].getX())) {	//check if current label can shift
 					sliderPoints[pointer[j]].setNEWLeftX(sliderPoints[pointer[j]].getNEWLeftX() - toShift);
 					sliderPoints[pointer[j]].setNEWRightX(sliderPoints[pointer[j]].getNEWRightX() - toShift);
-					sliderPoints[pointer[j]].setDirection("LEFT");													//if so, shift
+					sliderPoints[pointer[j]].setNEWDirection("LEFT");													//if so, shift
+					debugPrint("  shifting label with: " + toShift );
 				}
 //				else if (toShift == (sliderPoints[pointer[j]].getNEWRightX() - sliderPoints[pointer[j]].getX())) {		//if it fits exactly, shift, but finish
 //					sliderPoints[pointer[j]].setNEWLeftX(sliderPoints[pointer[j]].getNEWLeftX() - toShift);
 //					sliderPoints[pointer[j]].setNEWRightX(sliderPoints[pointer[j]].getNEWRightX() - toShift);
-//					sliderPoints[pointer[j]].setDirection("LEFT");
+//					sliderPoints[pointer[j]].setNEWDirection("LEFT");
 //					System.out.println("MAXIMUM HEIGHT REACHED: " + (sliderPoints[pointer[i]].getTopY() - sliderPoints[pointer[i]].getY()) );
 //					return false;
 //				}
 				else {
 					sliderPoints[pointer[i]].setMayGrow(false);
-					debugPrint("not clear, shifting would sever the label from its point");
-					debugPrint("MAXIMUM HEIGHT REACHED: " + (sliderPoints[pointer[i]].getTopY() - sliderPoints[pointer[i]].getY()) );
+					debugPrint("  not clear, shifting would sever the label from its point");
+					//debugPrint("MAXIMUM HEIGHT REACHED: " + (sliderPoints[pointer[i]].getTopY() - sliderPoints[pointer[i]].getY()) );
 					return false;																					//if not, we have reached our max size 
 					}
-				if ( checkNewSituation(sliderPoints, pointer, j, growth) == true ) {		//check if colliding label can move
+				if ( checkNewSituation(sliderPoints, pointer, j) == true ) {		//check if colliding label can move
 					sliderPoints[pointer[i]].setMayGrow(true);
-					debugPrint("clear, the others made room");
+					debugPrint("  clear, the others made room");
 					return true;																//if so, than you can move too
 				}
 				else{ 
 					sliderPoints[pointer[i]].setMayGrow(false);
-					debugPrint("not clear, the others couldnt made room");
+					debugPrint("  not clear, the others couldnt made room");
 					return false;
 					}																			//if not, you can't grow either
 			}
 			j--;												//if there are no collisions, you can grow
-			debugPrint(" height: " + (sliderPoints[pointer[i]].getNEWTopY()-sliderPoints[pointer[i]].getY()) + " new j: " + j);
+			debugPrint("  height: " + (sliderPoints[pointer[i]].getNEWTopY()-sliderPoints[pointer[i]].getY()) + " new j: " + j);
 		}
 		sliderPoints[pointer[i]].setMayGrow(true);
-		debugPrint("clear, no collision left/found");
+		debugPrint("  clear, no collision left/found");
 		return true;  											//all collisions are solved
 	}
 	
