@@ -5,9 +5,10 @@ public class Label {
 	private float shift; // 0 means left
 	private boolean hasIntersect = false;
 	// public Vector2i boundPoint;
-	private Point boundPoint;
-
+	private PosPoint boundPoint;
 	private Rectangle2D rect;
+	private boolean viable;
+	private int index;
 
 	private int ltDeg = 0;
 	private int rtDeg = 0;
@@ -19,10 +20,23 @@ public class Label {
 	private boolean lbShow = true;
 	private boolean rbShow = true;
 
-	public Label(Point point, float labelShift, boolean labelTop) {
+	public Label(PosPoint point, float labelShift, boolean labelTop) {
 		this.boundPoint = point;
 		this.shift = labelShift;
 		this.top = labelTop;
+		this.viable = true;
+	}
+	
+	public int getIndex(){
+		return index;
+	}
+	
+	public void setViability(boolean viability){
+		this.viable = viability;
+	}
+	
+	public boolean getViability(){
+		return this.viable;
 	}
 	
 	public void deleteGreatestDegree() {
@@ -94,11 +108,11 @@ public class Label {
 		this.hasIntersect = hasIntersect;
 	}
 
-	public Point getBoundPoint() {
+	public PosPoint getBoundPoint() {
 		return boundPoint;
 	}
 
-	public void setBoundPoint(Point boundPoint) {
+	public void setBoundPoint(PosPoint boundPoint) {
 		this.boundPoint = boundPoint;
 	}
 
