@@ -15,8 +15,8 @@ import java.util.Scanner;
 public class MapLabeler {
 	private Scanner sc;
 
-	private File input = new File("2pos_10000.txt");
-	private File output = new File("2pos10000_solved.txt");
+	private File input = new File("2pos100.txt");
+	private File output = new File("2pos100_solved.txt");
 
 	private Plane plane;
 	private PlacementModel pModel;

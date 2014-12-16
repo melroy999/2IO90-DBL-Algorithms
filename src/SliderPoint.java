@@ -1,7 +1,11 @@
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 
 public class SliderPoint extends Point {
 	public enum slideDirection{LEFT,RIGHT}
 	private slideDirection direction;
+	private slideDirection NEWdirection;
 	private double ratio;
 	private double leftX;
 	private double rightX;
@@ -16,8 +20,8 @@ public class SliderPoint extends Point {
 		direction = slideDirection.RIGHT;
 		this.ratio = ratio;
 		leftX = x;
-		rightX = x+0;
-		topY = y+(0/ratio);
+		rightX = x;
+		topY = y;
 		mayGrow = false;
 	}
 	
@@ -47,29 +51,52 @@ public class SliderPoint extends Point {
 		return direction.toString();
 	}
 	
+	public void setNEWDirection(String direction){
+		this.NEWdirection = slideDirection.valueOf(direction);
+	}
+	public String getNEWDirection(){
+		return NEWdirection.toString();
+	}
+	
 	public double getS(){
 		if (rightX-leftX == 0) { System.out.println("WTF M8");}
 		double s = (rightX-this.getX())/(rightX-leftX);
+		BigDecimal lel = new BigDecimal(s);
+		lel = lel.setScale(9, RoundingMode.FLOOR);
+		s = lel.doubleValue();		
 		return s;
 	}
 	
 	public void calcGrowth(double newGrow) {
 		if (direction == direction.RIGHT) {
 			NEWleftX  = leftX;
-			NEWrightX = rightX + newGrow;
-			NEWtopY   = topY + (newGrow/ratio);
+			NEWrightX = rightX + (newGrow*ratio);
+			NEWtopY   = topY + newGrow;
 		}
 		if (direction == direction.LEFT) {
-			NEWleftX  = leftX - newGrow;
+			NEWleftX  = leftX - (newGrow*ratio);
 			NEWrightX = rightX;
-			NEWtopY   = topY + (newGrow/ratio);
+			NEWtopY   = topY + newGrow;
 		}
+	}
+	public void setNEWsize(double NEWheight) {
+		if (direction == direction.RIGHT) {
+			NEWleftX  = leftX;
+			NEWrightX = rightX + (NEWheight*ratio);
+		}
+		if (direction == direction.LEFT) {
+			NEWleftX  = leftX - (NEWheight*ratio);
+			NEWrightX = rightX;
+		}
+		NEWtopY   = NEWheight + this.getY();
+		
 	}
 	
 	public void applyChanges(){
-		leftX 	= NEWleftX;
-		rightX 	= NEWrightX;
-		topY 	= NEWtopY;
+		leftX 	  = NEWleftX;
+		rightX 	  = NEWrightX;
+		topY 	  = NEWtopY;
+		direction = NEWdirection;
 	}
 
 		
