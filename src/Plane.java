@@ -1,5 +1,7 @@
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,7 +35,7 @@ public class Plane {
 
 	private double delta = 0.001;//difference of border
 	
-	private boolean debug = true;
+	private boolean debug = !true;
 	
 	private HashMap<Integer, ArrayList<ClauseValue>> outResult;
 
@@ -419,7 +421,7 @@ public class Plane {
 	}	
 	
 	public SliderPoint[] find1SliderSolution(){
-		delta= 0.1;
+		delta= 0.0000000001;
 		xPointArray = MergeSort.sort(sliderPoints);
 		CalcSlider(sliderPoints,xPointArray);
 		return sliderPoints;
@@ -428,9 +430,9 @@ public class Plane {
 	void CalcSlider(SliderPoint[] sArray, int[] pointer) {  
 		int i;																									//sliderPoints must be sorted on x-coordinates
 		double minH = 0;
-		double maxH = 20;
+		double maxH = 10000;
 		double currentH;
-		while (maxH-minH > delta) {
+		while (maxH-minH >= delta) {
 			boolean mayContinue = true;
 			currentH = (maxH + minH)/2;
 			debugPrint("Current: " + currentH);
@@ -446,15 +448,30 @@ public class Plane {
 				}
 			}
 			if (mayContinue) {
-				for (i = sliderPoints.length -1; i >= 0; i--) {
-					sliderPoints[pointer[i]].setMayGrow(false);
-				}
 				minH = currentH;				
+			}
+			for (i = sliderPoints.length -1; i >= 0; i--) {
+				sliderPoints[pointer[i]].setMayGrow(false);
 			}
 			debugPrint("new max and min: " + maxH + ", " +  minH);
 		}
 		
 		//FINAL LOOP TO PLACE ALL LABELS FOR THE MAX HEIGHT
+		//Calculate rounded height or width
+		debugPrint("____________________LAST LOOP_________________________");
+//		for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].setNEWsize(minH);}
+//		double MAXh = minH;
+//		double MAXw = sliderPoints[0].getNEWRightX() - sliderPoints[0].getNEWLeftX();
+//		if 		(MAXh % 0.5 > MAXw % 0.5) {				//height is closer to a half number
+//			MAXh = ((double)Math.round(MAXh*2))/2;
+//		}
+//		else if (MAXh % 0.5 < MAXw % 0.5) {				//width is closer to a half number
+//			MAXh = (((double)Math.round(MAXw*2))/2)/aspectRatio;
+//		}
+//		else {											//both equally close to a half number
+//			MAXh = ((double)Math.round(MAXh*2))/2;
+//			MAXw = ((double)Math.round(MAXw*2))/2;
+//		}
 		for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].setNEWsize(minH);}
 		for (i = sliderPoints.length -1; i >= 0; i--) {											//for every point, from right to left
 			if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
@@ -468,14 +485,22 @@ public class Plane {
 		for (i = sliderPoints.length -1; i >= 0; i--) {
 			sliderPoints[pointer[i]].applyChanges();
 		}
-		height = minH;
+		//height = ((float)((long)(minH*1000000000)))/1000000000;
+		//height = Math.floor(minH*1000000000)*1000000000;
+		//height = minH;
+		BigDecimal lel = new BigDecimal(minH);
+		lel = lel.setScale(9, RoundingMode.FLOOR);
+		height = lel.doubleValue();
 	}
 	
 	boolean checkNewSituation(SliderPoint[] sArray, int[] pointer, int pointLoc) {
 		int i = pointLoc;
 		int j = pointLoc - 1;
 		if (i==0) {
-			debugPrint("clear, the last point");return true;}																//the last label is always moveable			
+			debugPrint("clear, the last point");
+			sliderPoints[pointer[i]].setMayGrow(true);
+			return true;
+			}																//the last label is always moveable			
 		while (j >= 0  && (sliderPoints[pointer[j]].getX() > sliderPoints[pointer[i]].getNEWLeftX()- (sliderPoints[pointer[i]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX()))) {		//bound for possible collisions
 			debugPrint(" point (" + sliderPoints[pointer[i]].getX() + "," + sliderPoints[pointer[i]].getY() + ") may collide with (" + sliderPoints[pointer[j]].getX() + "," + sliderPoints[pointer[j]].getY() + ")" );
 			if ( (sliderPoints[pointer[i]].getNEWLeftX() <  sliderPoints[pointer[j]].getNEWRightX()) &&
