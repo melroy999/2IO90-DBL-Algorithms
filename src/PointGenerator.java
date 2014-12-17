@@ -23,7 +23,7 @@ public class PointGenerator {
 	public static void main(String[] args){
 		new PointGenerator().handler();
 	}
-	
+	 
 	public void handler(){
 		r = new Random(test);
 		for(int id = 100; id <= 10000; id += 100){
