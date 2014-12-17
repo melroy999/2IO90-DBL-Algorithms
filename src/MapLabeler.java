@@ -21,10 +21,10 @@ public class MapLabeler {
 	private Plane plane;
 	private PlacementModel pModel;
 
-	public static final boolean local = true;
+	public static final boolean local = !true;
 
 	public MapLabeler() throws IOException{
-		try{
+	    try{
 			if(local){
 				sc = new Scanner(input);
 			}
@@ -33,7 +33,7 @@ public class MapLabeler {
 				sc = new Scanner(System.in);
 			}
 		} catch (FileNotFoundException e){
-			System.out.println("Input file not found: " + input.getName());;
+			System.out.println("Input file not found: " + input.getName());
 		}
 		readInput();
 		long start = System.currentTimeMillis();
