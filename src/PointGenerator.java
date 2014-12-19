@@ -8,74 +8,108 @@ import java.util.Random;
 
 public class PointGenerator {
 
-	private Random r = new Random();
-	private File output = new File("iets.txt");
+	private Random r;
+	private File output;
 	private ArrayList<Point> p = new ArrayList<Point>(); 
 	private double ratio;
 	private double density;
 	private String placementModel;
-	private boolean noise = true;
+	private boolean noise = false;
 	
 	private int startOctave = 3;
 	
-	
+	private int test = 10;
 	
 	public static void main(String[] args){
 		new PointGenerator().handler();
 	}
-	
+	 
 	public void handler(){
-		placementModel = "2pos";
-		ratio = 3.14d;
-		density = 0.1;
-		int width = 100;
-		int height = 100;
-		
-		
-		
-		
-		if(noise){
-			System.out.println("Generating noise");
-			float[][] baseNoise = GenerateWhiteNoise(width, height);
-			//float[][] baseNoise = GetEmptyArray(width,height);
-	        float[][] perlinNoise =  GeneratePerlinNoise(baseNoise, 5);
-	        perlinNoise = AdjustLevels(perlinNoise, 0.0f, 1.0f);
-	        
-	        for(int i = 0; i < width; i++){
-				for(int j = 0; j < height; j++){
-					if(perlinNoise[i][j] > 0.5d){
-						if(r.nextDouble() < density){
-							p.add(new Point(i,j));
+		r = new Random(test);
+		for(int id = 100; id <= 10000; id += 100){
+		//int id = 100000;
+			output = new File("test" + test + "/pointsamm_" + id + ".txt");
+			placementModel = "1slider";
+			ratio = r.nextFloat() * 3;
+			density = 0.1;
+			int pointsAmount = id;
+			int width = 100;
+			int height = 100;
+			
+			
+			
+			
+			if(noise){
+				System.out.println("Generating noise");
+				float[][] baseNoise = GenerateWhiteNoise(width, height);
+				//float[][] baseNoise = GetEmptyArray(width,height);
+		        float[][] perlinNoise =  GeneratePerlinNoise(baseNoise, 5);
+		        perlinNoise = AdjustLevels(perlinNoise, 0.0f, 1.0f);
+		        
+		        fiets:
+		        for(int i = 0; i < width; i++){
+					for(int j = 0; j < height; j++){
+						if(perlinNoise[i][j] > 0.5d){
+							if(r.nextDouble() < density){
+								p.add(new Point(i,j));
+							}
+							
 						}
 					}
 				}
+		        Collections.shuffle(p);
+				
 			}
-	        Collections.shuffle(p);
+			else {
+				r.setSeed((long) test * id * 4587);
+				createPoints(pointsAmount);
+				Collections.shuffle(p);
+			}
 			
-		}
-		else {
-			createPoints(width,height);
-		}
-		
-		try {
-			writeOutput();
-		} catch (IOException e) {
-			e.printStackTrace();
+			try {
+				writeOutput();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		System.out.println("Done");
 		
 	}
 	
 	
-	public void createPoints(int width, int height){
-		for(int i = 0; i < width; i++){
-			for(int j = 0; j < height; j++){
+	public void createPoints(int pointsAmount){
+		for(int i = 0; i < 1000000000; i++){
+			//if(r.nextDouble() < density){
+			//	p.add(new Point(i,i));
+			//}
+			//if(p.size() >= pointsAmount) return;
+			for(int j = 0; j < i; j++){
 				if(r.nextDouble() < density){
-					p.add(new Point(i,j));
+					Point point = new Point(i,j);
+					boolean in = false;
+					for(int k = 0; k < p.size(); k++){
+						if(p.get(k).getX() == i && p.get(k).getY() == j){ in = true; break; }
+					}
+					if(!in){ p.add(point); }
 				}
+				if(p.size() >= pointsAmount) return;
 			}
+			for(int j = 0; j < i; j++){
+				if(r.nextDouble() < density){
+					Point point = new Point(j,i);
+					boolean in = false;
+					for(int k = 0; k < p.size(); k++){
+						if(p.get(k).getX() == j && p.get(k).getY() == i){ in = true; break; }
+					}
+					if(!in){ p.add(point); }
+				}
+				if(p.size() >= pointsAmount) return;
+			}
+			
+			
+			
 		}
-		Collections.shuffle(p);
+		
 	}
 	
 	public void writeOutput() throws IOException{

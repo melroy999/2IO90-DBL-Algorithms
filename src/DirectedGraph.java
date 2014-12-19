@@ -22,7 +22,7 @@ class DirectedGraph implements Iterable<ClauseValue> {
 	}
 	
 	public void addNode(ClauseValue node){
-		graph.put(node, new HashSet<ClauseValue>());// find out why this does not work
+		graph.put(node, new HashSet<ClauseValue>());
 	}
 	
 	public void addEdge(ClauseValue start, ClauseValue end) {
