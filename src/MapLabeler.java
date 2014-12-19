@@ -36,7 +36,7 @@ public class MapLabeler {
 			System.out.println("Input file not found: " + input.getName());
 		}
 		readInput();
-		long start = System.currentTimeMillis();
+	    long start = System.currentTimeMillis();
 		solvePlacementProblem();
 		writeOutput();
 		long stop = System.currentTimeMillis();
@@ -55,7 +55,6 @@ public class MapLabeler {
 		sc.next();
 		sc.next();
 		int numberOfPoints = sc.nextInt();
-
 		if(pModel == PlacementModel.ONESLIDER){
 			SliderPoint[] points = new SliderPoint[numberOfPoints];
 
@@ -75,7 +74,8 @@ public class MapLabeler {
 				points[i] = new PosPoint(x, y);
 			}
 			plane = new Plane(ratio, points, pModel);
-		}		
+		}	
+		
 	}
 
 	public void solvePlacementProblem(){

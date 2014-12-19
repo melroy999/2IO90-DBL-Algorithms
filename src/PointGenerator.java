@@ -26,13 +26,13 @@ public class PointGenerator {
 	 
 	public void handler(){
 		r = new Random(test);
-		for(int id = 100; id <= 10000; id += 100){
+		//for(int id = 100; id <= 10000; id += 100){
 		//int id = 100000;
-			output = new File("test" + test + "/pointsamm_" + id + ".txt");
+			output = new File("D:\\Desktop\\pointsamm_30.txt");
 			placementModel = "1slider";
 			ratio = r.nextFloat() * 3;
 			density = 0.1;
-			int pointsAmount = id;
+			int pointsAmount = 30;
 			int width = 100;
 			int height = 100;
 			
@@ -61,7 +61,7 @@ public class PointGenerator {
 				
 			}
 			else {
-				r.setSeed((long) test * id * 4587);
+				r.setSeed((long) test * 30 * 4587);
 				createPoints(pointsAmount);
 				Collections.shuffle(p);
 			}
@@ -71,7 +71,7 @@ public class PointGenerator {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
+		//}
 		System.out.println("Done");
 		
 	}
