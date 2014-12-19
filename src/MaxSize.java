@@ -2,7 +2,7 @@ public class MaxSize {
 
     // Finds the maximal possible height for a set of points such that there might be a solution.
     public static double getMaxPossibleHeight(Point[] points, int[] pointers, double ratio, PlacementModel pModel){
-        double minimum = 10000;
+        double minimum = Double.MAX_VALUE;
 
         for(int i=0; i<pointers.length; i++){
             double localMax = getPosMaxHeight(points, pointers, i, ratio, Orientation.NE);
@@ -33,7 +33,7 @@ public class MaxSize {
 
         if(orientation == Orientation.NE){
             boolean rightAbove = false;
-            double orientationMaxHeight = 10000;
+            double orientationMaxHeight = Double.MAX_VALUE;
             j++;
             while(j<pointers.length){
                 Point p2 = points[pointers[j]];
@@ -63,7 +63,7 @@ public class MaxSize {
         }
         else  if(orientation == Orientation.NW){
             boolean rightAbove = false;
-            double orientationMaxHeight = 10000;
+            double orientationMaxHeight = Double.MAX_VALUE;
             j--;
             while(0 <= j){
                 Point p2 = points[pointers[j]];
@@ -93,7 +93,7 @@ public class MaxSize {
         }
         else  if(orientation == Orientation.SE){
             boolean rightAbove = false;
-            double orientationMaxHeight = 10000;
+            double orientationMaxHeight = Double.MAX_VALUE;
             j++;
             while(j<pointers.length){
                 Point p2 = points[pointers[j]];
@@ -123,7 +123,7 @@ public class MaxSize {
         }
         else  {
             boolean rightAbove = false;
-            double orientationMaxHeight = 10000;
+            double orientationMaxHeight = Double.MAX_VALUE;
             j--;
             while(0 <= j){
                 Point p2 = points[pointers[j]];

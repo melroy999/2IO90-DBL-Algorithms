@@ -177,6 +177,28 @@ public class QuadTree {
     	
 	}
 	
+	public void init(Label[] labels, double vSize, double ratio, int range){
+		this.empty();
+		this.bounds = new Rectangle2D.Double(0 - vSize * ratio,0 - vSize,range + (2 * vSize * ratio),range + (2 * vSize));
+    	
+		for (int i = 0; i < labels.length; i++) labels[i].setHasIntersect(false);
+    	for (int i = 0; i < labels.length; i++) {
+    		Label l = labels[i];
+    		double top = l.getBoundPoint().getY() + (l.isTop() ? vSize : 0);
+            double bottom = top - vSize;
+            double right = l.getBoundPoint().getX() + (vSize * ratio * l.getShift());
+            double left = right - (vSize * ratio);
+            
+            Rectangle2D rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+            l.setRect(rect);
+            this.insert(l);
+            
+    	}
+    	//.toString();
+    	//
+    	
+	}
+	
 	
 	/*
 	 * Determine which node the object belongs to. -1 means

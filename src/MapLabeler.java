@@ -63,7 +63,7 @@ public class MapLabeler {
 				int y = sc.nextInt();
 				points[i] = new SliderPoint(x, y, ratio);
 			}
-			plane = new Plane(ratio, points, pModel);
+			plane = new Plane(ratio, points);
 		}
 		else{
 			PosPoint[] points = new PosPoint[numberOfPoints];
@@ -73,7 +73,7 @@ public class MapLabeler {
 				int y = sc.nextInt();
 				points[i] = new PosPoint(x, y);
 			}
-			plane = new Plane(ratio, points, pModel);
+			plane = new Plane(ratio, points);
 		}	
 		
 	}
