@@ -28,12 +28,12 @@ public class MaxSize {
     }
 
     private static double getPosMaxHeight(Point[] points, int[] pointers, int j, double ratio, Orientation orientation){
-        double maximum = 0;
+        double maximum = (ratio < 1) ? 1/ratio : 1;
         Point p = points[pointers[j]];
 
         if(orientation == Orientation.NE){
             boolean rightAbove = false;
-            double orientationMaxHeight = Double.MAX_VALUE;
+            double orientationMaxHeight = 10000/((ratio<1)?ratio*ratio:1/(ratio*ratio));
             j++;
             while(j<pointers.length){
                 Point p2 = points[pointers[j]];
@@ -63,7 +63,7 @@ public class MaxSize {
         }
         else  if(orientation == Orientation.NW){
             boolean rightAbove = false;
-            double orientationMaxHeight = Double.MAX_VALUE;
+            double orientationMaxHeight = 10000/((ratio<1)?ratio*ratio:1/(ratio*ratio));
             j--;
             while(0 <= j){
                 Point p2 = points[pointers[j]];
@@ -93,7 +93,7 @@ public class MaxSize {
         }
         else  if(orientation == Orientation.SE){
             boolean rightAbove = false;
-            double orientationMaxHeight = Double.MAX_VALUE;
+            double orientationMaxHeight = 10000/((ratio<1)?ratio*ratio:1/(ratio*ratio));
             j++;
             while(j<pointers.length){
                 Point p2 = points[pointers[j]];
@@ -123,7 +123,7 @@ public class MaxSize {
         }
         else  {
             boolean rightAbove = false;
-            double orientationMaxHeight = Double.MAX_VALUE;
+            double orientationMaxHeight = 10000/((ratio<1)?ratio*ratio:1/(ratio*ratio));
             j--;
             while(0 <= j){
                 Point p2 = points[pointers[j]];
