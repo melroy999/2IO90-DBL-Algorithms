@@ -242,7 +242,7 @@ public class Label {
 	 * @return returns the label as a ClauseValue
 	 */
 	public ClauseValue toClause(){
-		return new ClauseValue(this.boundPoint.toString(top ? 1 : 0),(this.shift==0 ? false : true));
+		return new ClauseValue(this.boundPoint.toString(),(this.shift==0 ? false : true));
 		//returns a clausevalue with the correct boolean value and string value. the boundpoint string value has an additional value for the southern points
 	}
 }
