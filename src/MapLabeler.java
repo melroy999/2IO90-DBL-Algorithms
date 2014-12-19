@@ -15,7 +15,7 @@ import java.util.Scanner;
 public class MapLabeler {
 	private Scanner sc;
 
-	private File input;
+	private File input = new File("2pos100.txt");
 	private File output = new File("2pos100_solved.txt");
 
 	private Plane plane;
@@ -24,9 +24,9 @@ public class MapLabeler {
 	public static final boolean local = true;
 
 	public MapLabeler() throws IOException{
-		for(int i = 100; i <= 10000; i+=100){
-			if (i == 300) {i+=100;}
-			input = new File("tests/pointsamm_" + i + ".txt");
+		//for(int i = 100; i <= 10000; i+=100){
+			//if (i == 300) {i+=100;}
+			//input = new File("tests/pointsamm_" + i + ".txt");
 			try{
 		
 			if(local){
@@ -45,7 +45,7 @@ public class MapLabeler {
 		writeOutput();
 		long stop = System.currentTimeMillis();
 		System.out.println("Time elapsed: "+(stop-start));
-		}
+		//}
 	}
 
 	public void readInput(){
