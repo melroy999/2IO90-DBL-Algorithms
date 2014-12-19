@@ -268,7 +268,6 @@ public class Plane {
 	}
 	
 	public SliderPoint[] find1SliderSolution(){
-		delta= 0.0000000001;
 		xPointArray = MergeSort.sort(sliderPoints);
 		CalcSlider(sliderPoints,xPointArray);
 		return sliderPoints;
@@ -277,7 +276,11 @@ public class Plane {
 	void CalcSlider(SliderPoint[] sArray, int[] pointer) {  
 		int i;																									//sliderPoints must be sorted on x-coordinates
 		double minH = 0;
-		double maxH = 10000000000000d;
+		double maxH = MaxSize.getMaxPossibleHeight(sArray, pointer, aspectRatio, PlacementModel.ONESLIDER);
+		double T = 0.008;
+		delta= maxH/(Math.pow(2,(1000/(sArray.length * T))));
+		System.out.println("Precision: " + delta);
+		System.out.println("MaxSize gives: " + maxH);
 		double currentH;
 		while (maxH-minH >= delta) {
 			boolean mayContinue = true;
@@ -336,7 +339,7 @@ public class Plane {
 		//height = Math.floor(minH*1000000000)*1000000000;
 		//height = minH;
 		BigDecimal lel = new BigDecimal(minH);
-		lel = lel.setScale(9, RoundingMode.FLOOR);
+		lel = lel.setScale(10, RoundingMode.FLOOR);
 		height = lel.doubleValue();
 	}
 	

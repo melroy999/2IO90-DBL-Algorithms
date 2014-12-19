@@ -15,8 +15,8 @@ import java.util.Scanner;
 public class MapLabeler {
 	private Scanner sc;
 
-	private File input = new File("testert.txt");
-	private File output = new File("testert_solved.txt");
+	private File input = new File("2pos100.txt");
+	private File output = new File("2pos100_solved.txt");
 
 	private Plane plane;
 	private PlacementModel pModel;
@@ -24,7 +24,11 @@ public class MapLabeler {
 	public static final boolean local = true;
 
 	public MapLabeler() throws IOException{
-		try{
+		//for(int i = 100; i <= 10000; i+=100){
+			//if (i == 300) {i+=100;}
+			//input = new File("tests/pointsamm_" + i + ".txt");
+			try{
+		
 			if(local){
 				sc = new Scanner(input);
 			}
@@ -41,6 +45,7 @@ public class MapLabeler {
 		writeOutput();
 		long stop = System.currentTimeMillis();
 		System.out.println("Time elapsed: "+(stop-start));
+		//}
 	}
 
 	public void readInput(){
@@ -77,15 +82,13 @@ public class MapLabeler {
 			plane = new Plane(ratio, points);
 		}		
 	}
-	
-	Label[] iets = new Label[1];
-	
+
 	public void solvePlacementProblem(){
 		if(pModel == PlacementModel.TWOPOS){
 			plane.find2PosSolution();
 		}
 		else if(pModel == PlacementModel.FOURPOS){
-			iets = plane.find4PosSolutionSA();
+			plane.find4PosSolution();
 		}
 		else{
 			plane.find1SliderSolution();
@@ -108,14 +111,6 @@ public class MapLabeler {
 				SliderPoint[] s = plane.getSliderPoints();
 				for(int i=0; i<s.length; i++){
 					bw.write("" + s[i].getX() + " " + s[i].getY() + " " + s[i].getS());
-					bw.newLine();
-				}
-			}
-			else if(pModel == PlacementModel.FOURPOS){
-				Label[] l = iets;
-				for(int i = 0; i < l.length; i++){
-					//bw.write(" " + l[i].getShift());
-					bw.write("" + l[i].getX() + " " + l[i].getY() + " " + l[i].getOrientation().toString());//TODO redo orientation text
 					bw.newLine();
 				}
 			}
