@@ -59,11 +59,24 @@ public class MergeSort {
 		// Copy the smallest values from either the left or the right side back
 		// to the original array
 		while (i <= middle && j <= high) {
-			if (helper[i].getX() <= helper[j].getX()) {
+			if (helper[i].getX() < helper[j].getX()) {
 				numbers[k] = helper[i];
 				pointers[k] = pointersHelper[i];
 				i++;
-			} else {
+			} 
+			else if(helper[i].getX() == helper[j].getX()){
+			    if(helper[i].getY() <= helper[j].getY()){
+			        numbers[k] = helper[i];
+			        pointers[k] = pointersHelper[i];
+			        i++;
+			    }
+			    else{
+			        numbers[k] = helper[j];
+			        pointers[k] = pointersHelper[j];
+			        j++;
+			    }
+			}
+			else {
 				numbers[k] = helper[j];
 				pointers[k] = pointersHelper[j];
 				j++;

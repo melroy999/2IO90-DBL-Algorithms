@@ -151,7 +151,6 @@ public class MaxSize {
             }
             maximum = (maximum < orientationMaxHeight) ? orientationMaxHeight : maximum;
         }
-
         return maximum;
     }
 }

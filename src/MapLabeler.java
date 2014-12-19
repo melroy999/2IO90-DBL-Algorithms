@@ -15,16 +15,17 @@ import java.util.Scanner;
 public class MapLabeler {
 	private Scanner sc;
 
-	private File input = new File("test/pointsamm_100_4pos.txt");
-	private File output = new File("test/pointsamm_100_4pos_solved.txt");
+
+	private File input = new File("2pos100.txt");
+	private File output = new File("2pos100_solved.txt");
 
 	private Plane plane;
 	private PlacementModel pModel;
 
-	public static final boolean local = true;
+	public static final boolean local = !true;
 
 	public MapLabeler() throws IOException{
-		try{
+	    try{
 			if(local){
 				sc = new Scanner(input);
 			}
@@ -33,10 +34,10 @@ public class MapLabeler {
 				sc = new Scanner(System.in);
 			}
 		} catch (FileNotFoundException e){
-			System.out.println("Input file not found: " + input.getName());;
+			System.out.println("Input file not found: " + input.getName());
 		}
 		readInput();
-		long start = System.currentTimeMillis();
+	    long start = System.currentTimeMillis();
 		solvePlacementProblem();
 		writeOutput();
 		long stop = System.currentTimeMillis();
@@ -55,7 +56,6 @@ public class MapLabeler {
 		sc.next();
 		sc.next();
 		int numberOfPoints = sc.nextInt();
-
 		if(pModel == PlacementModel.ONESLIDER){
 			SliderPoint[] points = new SliderPoint[numberOfPoints];
 
@@ -75,17 +75,16 @@ public class MapLabeler {
 				points[i] = new PosPoint(x, y);
 			}
 			plane = new Plane(ratio, points);
-		}		
+		}	
+		
 	}
-	
-	Label[] iets = new Label[1];
-	
+
 	public void solvePlacementProblem(){
 		if(pModel == PlacementModel.TWOPOS){
 			plane.find2PosSolution();
 		}
 		else if(pModel == PlacementModel.FOURPOS){
-			iets = plane.find4PosSolutionSA();
+			plane.find4PosSolution();
 		}
 		else{
 			plane.find1SliderSolution();
@@ -108,14 +107,6 @@ public class MapLabeler {
 				SliderPoint[] s = plane.getSliderPoints();
 				for(int i=0; i<s.length; i++){
 					bw.write("" + s[i].getX() + " " + s[i].getY() + " " + s[i].getS());
-					bw.newLine();
-				}
-			}
-			else if(pModel == PlacementModel.FOURPOS){
-				Label[] l = iets;
-				for(int i = 0; i < l.length; i++){
-					//bw.write(" " + l[i].getShift());
-					bw.write("" + l[i].getX() + " " + l[i].getY() + " " + l[i].getOrientation().toString());//TODO redo orientation text
 					bw.newLine();
 				}
 			}
