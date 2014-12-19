@@ -15,8 +15,8 @@ import java.util.Scanner;
 public class MapLabeler {
 	private Scanner sc;
 
-	private File input = new File("2pos100.txt");
-	private File output = new File("2pos100_solved.txt");
+	private File input = new File("testert.txt");
+	private File output = new File("testert_solved.txt");
 
 	private Plane plane;
 	private PlacementModel pModel;
@@ -77,13 +77,15 @@ public class MapLabeler {
 			plane = new Plane(ratio, points, pModel);
 		}		
 	}
-
+	
+	Label[] iets = new Label[1];
+	
 	public void solvePlacementProblem(){
 		if(pModel == PlacementModel.TWOPOS){
 			plane.find2PosSolution();
 		}
 		else if(pModel == PlacementModel.FOURPOS){
-			plane.find4PosSolution();
+			iets = plane.find4PosSolutionSA();
 		}
 		else{
 			plane.find1SliderSolution();
@@ -106,6 +108,14 @@ public class MapLabeler {
 				SliderPoint[] s = plane.getSliderPoints();
 				for(int i=0; i<s.length; i++){
 					bw.write("" + s[i].getX() + " " + s[i].getY() + " " + s[i].getS());
+					bw.newLine();
+				}
+			}
+			else if(pModel == PlacementModel.FOURPOS){
+				Label[] l = iets;
+				for(int i = 0; i < l.length; i++){
+					//bw.write(" " + l[i].getShift());
+					bw.write("" + l[i].getX() + " " + l[i].getY() + " " + l[i].getOrientation().toString());//TODO redo orientation text
 					bw.newLine();
 				}
 			}

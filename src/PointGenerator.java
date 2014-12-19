@@ -26,9 +26,10 @@ public class PointGenerator {
 	 
 	public void handler(){
 		r = new Random(test);
-		for(int id = 100; id <= 10000; id += 100){
+		//for(int id = 100; id <= 10000; id += 100){
 		//int id = 100000;
-			output = new File("test" + test + "/pointsamm_" + id + ".txt");
+		int id = 10;
+			output = new File("testfile.txt");
 			placementModel = "1slider";
 			ratio = r.nextFloat() * 3;
 			density = 0.1;
@@ -71,7 +72,7 @@ public class PointGenerator {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
+		//}
 		System.out.println("Done");
 		
 	}

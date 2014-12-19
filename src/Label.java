@@ -27,6 +27,13 @@ public class Label {
 		this.viable = true;
 	}
 	
+	public Label(Label l){
+		this.boundPoint = l.getBoundPoint();
+		this.shift = l.getShift();
+		this.top = l.top;
+		this.viable = l.viable;
+	}
+	
 	public int getIndex(){
 		return index;
 	}
@@ -76,6 +83,39 @@ public class Label {
 		}
 	}
 
+	public void setOrientation(Orientation o){
+		if(o == Orientation.NE){
+			this.top = true;
+			this.shift = 1;
+		}
+		else if(o == Orientation.NW){
+			this.top = true;
+			this.shift = 0;
+		}
+		else if(o == Orientation.SE){
+			this.top = false;
+			this.shift = 1;
+		}
+		else {
+			this.top = false;
+			this.shift = 0;
+		}
+		
+	}
+	
+	public Orientation getOrientation(){
+		Orientation o = Orientation.NW;
+		if(Math.abs(this.shift) < 0.00001){
+			if(this.top) o = Orientation.NW;
+			if(!this.top) o = Orientation.SW;
+		}
+		if(Math.abs(this.shift - 1) < 0.000001){
+			if(this.top) o = Orientation.NE;
+			if(!this.top) o = Orientation.SE;
+		}
+		return o;
+	}
+	
 	public int getX() {
 		return boundPoint.getX();
 	}

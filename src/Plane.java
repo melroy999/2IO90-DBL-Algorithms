@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
 
@@ -198,6 +199,90 @@ public class Plane {
 		}
 	}
 
+	public Label[] labels;
+	
+	Random r = new Random();
+	public Label[] find4PosSolutionSA(){
+		
+		
+		int range = 10000;
+		
+		double temp = 10000;
+		double coolingRate = 0.00003;
+		
+		double maxHeight = 10000;
+		
+		height = 10;
+		
+		
+		LabelConfiguration current = new LabelConfiguration(posPoints);
+		
+		LabelConfiguration best = new LabelConfiguration(current.getLabels());
+		int bestEnergy = calculateScore(best);
+		labels = current.getLabels();
+		
+		while(temp > 1 && bestEnergy > 0){
+			//System.out.println(temp);
+			
+			int currentEnergy = calculateScore(current);
+			//System.out.println("old: " + current);
+			
+			
+			LabelConfiguration newSolution = new LabelConfiguration(current.getLabels());
+			int position = (int) (newSolution.labelSize() * r.nextDouble());
+			newSolution.change(position);
+			
+			int neighbourEnergy = calculateScore(newSolution);
+			
+			//System.out.println("new: " + newSolution);
+			
+			
+			if (calculateAcceptance(currentEnergy, neighbourEnergy, temp) > r.nextDouble()) {
+				//System.out.println("new for " + neighbourEnergy);
+                current = new LabelConfiguration(newSolution.getLabels());
+            }
+			else {
+				//System.out.println("NOT NEW FOR " + neighbourEnergy);
+			}
+			if (neighbourEnergy < bestEnergy) {
+				System.out.println("#################### New best" + neighbourEnergy);
+				//System.out.println("     " + newSolution);
+                best = new LabelConfiguration(newSolution.getLabels());
+                bestEnergy = neighbourEnergy;
+            }
+			temp *= 1-coolingRate;
+            
+			
+		}
+		System.out.println("Best " + best);
+		System.out.println("Best: " + bestEnergy);
+		return best.getLabels();
+	}
+	
+	private double calculateAcceptance(int oldEnergy, int newEnergy, double temperature){
+		//System.out.println("old: " + oldEnergy);
+		//System.out.println("new: " + newEnergy);
+		
+		if(newEnergy < oldEnergy){
+			//System.out.println("better");
+			return 1.0;
+		}
+		return Math.exp((oldEnergy - newEnergy) / temperature);
+	}
+	
+	
+	private int calculateScore(LabelConfiguration config){
+		int range = 10000;
+		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range,range));
+		quad.init(config.getLabels(), height, aspectRatio, 10000);//initialize the quadtree
+		int amount = countIntersections(quad, config.getLabels());//gives all labels the correct boolean value for intersection.
+		//System.out.println(amount);
+		return amount;
+	}
+	
+	
+	
+	
 	/**
 	 * 
 	 * @return The solution to the 4pos problem. It first calculates the maximum height
@@ -919,6 +1004,33 @@ public class Plane {
 		}
 	}
 
+	
+	
+	
+	public int countIntersections(QuadTree tree, Label[] labels){
+		int amount = 0;
+		for(int i = 0; i < labels.length; i++){
+			Label l = labels[i];
+			if(!l.isHasIntersect()){
+				ArrayList<Label> returnObjects = new ArrayList<Label>();
+				tree.retrieve(returnObjects, l);
+				for(Label label2: returnObjects){
+					//label2.hasIntersect = false;
+					
+					if(intersects(l, label2)){
+						l.setHasIntersect(true);
+						amount++;
+						if(!label2.isHasIntersect()){
+							label2.setHasIntersect(true);
+							amount++;
+						}
+					}	
+				}	
+			}
+		}
+		return amount;
+	 }
+	
 
 	/**
 	 * 
@@ -928,20 +1040,21 @@ public class Plane {
 	 public void setIntersectionsQuad(QuadTree tree, ArrayList<Label> labels){
 		 for(int i = 0; i < labels.size(); i++){
 			 Label l = labels.get(i);
-
-			 double l1 = l.getRect().getX();
-			 double r1 = l.getRect().getX() + l.getRect().getWidth();
-			 double b1 = l.getRect().getY();
-			 double t1 = l.getRect().getY() + l.getRect().getHeight();
-
-			 ArrayList<Label> returnObjects = new ArrayList<Label>();
-			 tree.retrieve(returnObjects, l);
-			 for(Label label2: returnObjects){
-				 //label2.hasIntersect = false;
-
-				 if(intersects(l, label2)){
-					 l.setHasIntersect(true);
-					 label2.setHasIntersect(true);
+			 if(!l.isHasIntersect()){
+				 double l1 = l.getRect().getX();
+				 double r1 = l.getRect().getX() + l.getRect().getWidth();
+				 double b1 = l.getRect().getY();
+				 double t1 = l.getRect().getY() + l.getRect().getHeight();
+	
+				 ArrayList<Label> returnObjects = new ArrayList<Label>();
+				 tree.retrieve(returnObjects, l);
+				 for(Label label2: returnObjects){
+					 //label2.hasIntersect = false;
+	
+					 if(intersects(l, label2)){
+						 l.setHasIntersect(true);
+						 label2.setHasIntersect(true);
+					 }
 				 }
 			 }
 		 }
