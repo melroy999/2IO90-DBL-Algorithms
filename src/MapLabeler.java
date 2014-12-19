@@ -15,8 +15,8 @@ import java.util.Scanner;
 public class MapLabeler {
 	private Scanner sc;
 
-	private File input = new File("testert.txt");
-	private File output = new File("testert_solved.txt");
+	private File input = new File("test/pointsamm_100_4pos.txt");
+	private File output = new File("test/pointsamm_100_4pos_solved.txt");
 
 	private Plane plane;
 	private PlacementModel pModel;

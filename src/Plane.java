@@ -184,56 +184,109 @@ public class Plane {
 		
 		int range = 10000;
 		
-		double temp = 10000;
-		double coolingRate = 0.00003;
 		
-		double maxHeight = 10000;
+		double coolingRate = 0.003;
 		
-		height = 10;
+		LabelConfiguration best = null;
+		int bestEnergy;
 		
 		
-		LabelConfiguration current = new LabelConfiguration(posPoints);
 		
-		LabelConfiguration best = new LabelConfiguration(current.getLabels());
-		int bestEnergy = calculateScore(best);
-		labels = current.getLabels();
+		//double maxHeight = 10000;
 		
-		while(temp > 1 && bestEnergy > 0){
-			//System.out.println(temp);
+		int[] xSortedOrder = MergeSort.sort(posPoints);//sorting the points on x-cor, referencing by index in this array.
+		double minHeight = (aspectRatio < 1) ? 1 : (1/aspectRatio);//minimal height		
+		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);//2x the maximal height, so that we start with the calculated max-height in the loop.
+		maxHeight = 100;
+		
+		height = maxHeight;//height to use is the average of max and min height
+		double lastHeight = 0;
+		
+		LabelConfiguration finalBest = null;
+		int finalBestEnergy = Integer.MAX_VALUE;
+		double finalHeight = 0;
+		
+		while(lastHeight != height){
+			System.out.println(height);
+			//height = 10;
+			double temp = 10000;
 			
-			int currentEnergy = calculateScore(current);
-			//System.out.println("old: " + current);
+			LabelConfiguration current = new LabelConfiguration(posPoints);
 			
+			best = new LabelConfiguration(current.getLabels());
+			bestEnergy = calculateScore(best);
 			
-			LabelConfiguration newSolution = new LabelConfiguration(current.getLabels());
-			int position = (int) (newSolution.labelSize() * r.nextDouble());
-			newSolution.change(position);
+			//System.out.println("BEst: " + bestEnergy);
+			labels = current.getLabels();
 			
-			int neighbourEnergy = calculateScore(newSolution);
-			
-			//System.out.println("new: " + newSolution);
-			
-			
-			if (calculateAcceptance(currentEnergy, neighbourEnergy, temp) > r.nextDouble()) {
-				//System.out.println("new for " + neighbourEnergy);
-                current = new LabelConfiguration(newSolution.getLabels());
-            }
-			else {
-				//System.out.println("NOT NEW FOR " + neighbourEnergy);
+			while(temp > 1 && bestEnergy > 0){
+				//System.out.println(temp);
+				
+				int currentEnergy = calculateScore(current);
+				//System.out.println("old: " + current);
+				
+				
+				LabelConfiguration newSolution = new LabelConfiguration(current.getLabels());
+				int position = (int) (newSolution.labelSize() * r.nextDouble());
+				newSolution.change(position);
+				
+				int neighbourEnergy = calculateScore(newSolution);
+				
+				//System.out.println("new: " + newSolution);
+				
+				
+				if (calculateAcceptance(currentEnergy, neighbourEnergy, temp) > r.nextDouble()) {
+					//System.out.println("new for " + neighbourEnergy);
+	                current = new LabelConfiguration(newSolution.getLabels());
+	            }
+				else {
+					//System.out.println("NOT NEW FOR " + neighbourEnergy);
+				}
+				if (neighbourEnergy < bestEnergy) {
+					//System.out.println("#################### New best" + neighbourEnergy);
+					//System.out.println("     " + newSolution);
+	                best = new LabelConfiguration(newSolution.getLabels());
+	                bestEnergy = neighbourEnergy;
+	            }
+				
+				
+				
+				temp *= 1-coolingRate;
+	            
+				
 			}
-			if (neighbourEnergy < bestEnergy) {
-				System.out.println("#################### New best" + neighbourEnergy);
-				//System.out.println("     " + newSolution);
-                best = new LabelConfiguration(newSolution.getLabels());
-                bestEnergy = neighbourEnergy;
-            }
-			temp *= 1-coolingRate;
-            
+			
+			if(bestEnergy == 0){
+				
+				if(finalHeight < height){
+					//System.out.println("CHANGE THE FINAL THING ######################################3");
+					finalBestEnergy = bestEnergy;
+					finalBest = new LabelConfiguration(best.getLabels());
+					finalHeight = height;
+				}
+				
+				minHeight = height;
+			}
+			else {
+				maxHeight = height;
+			}
+			
+			lastHeight = height;
+			
+			height = (maxHeight+minHeight)/2;//height to use is the average of max and min height
+			double width = height * aspectRatio;
+			
+			height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
+			
+			//System.out.println("Best " + best);
+			//System.out.println("Best: " + bestEnergy);
+			
 			
 		}
-		System.out.println("Best " + best);
-		System.out.println("Best: " + bestEnergy);
-		return best.getLabels();
+		height = minHeight;
+		System.out.println("FINAL HEIGHT: " + height);
+		System.out.println("FINAL BEST: " + finalBest);
+		return finalBest.getLabels();
 	}
 	
 	private double calculateAcceptance(int oldEnergy, int newEnergy, double temperature){
