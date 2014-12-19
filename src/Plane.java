@@ -305,7 +305,7 @@ public class Plane {
 	}
 
 	public SliderPoint[] find1SliderSolution(){
-		delta= 0.0000000001;
+		delta= 0.000000001;
 		xPointArray = MergeSort.sort(sliderPoints);
 		CalcSlider(sliderPoints,xPointArray);
 		return sliderPoints;
