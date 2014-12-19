@@ -142,9 +142,7 @@ public class Plane {
 			debugPrint("--------------------------------------------------------------------------");//DEBUG
 		}
 		
-		//debugPrint("Given minHeight: " + height);
 		height = minHeight;
-		//height = Math.floor(height*(1/(delta*10)))*delta*10;
 		debugPrint("The height solution is: " + height);//DEBUG
 		
 		Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));
