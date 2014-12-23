@@ -91,8 +91,8 @@ public class Plane {
 		double lastHeight = 0;
 		
 		while(lastHeight != height){//while the difference isn't too small
-			clearLabels(posPoints);//clear all labels from the arraylists in the points
-			ArrayList<Label> labels = new ArrayList<Label>();//all labels will be stored in this arraylist. 
+			clearLabels(posPoints);//clear all labels saved in the points
+			ArrayList<Label> labels = new ArrayList<Label>();//all labels will be stored in this arrayList. 
 			
 			debugPrint("currentHeight: " + height + ", minHeight: " + minHeight + ", maxHeight: " + maxHeight + ", difference: " + (maxHeight-minHeight));//DEBUG
 			
@@ -160,7 +160,7 @@ public class Plane {
 	}
 	
 	public double roundToHalf(double d){
-		return Math.round(2*d)/2d;
+		return Math.round(2*d)/2d;//returns the rounded value of 2*d, divided by double type value 2.
 	}
 	
 	public void getNext(ClauseValue next){
