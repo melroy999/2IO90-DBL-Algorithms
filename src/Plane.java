@@ -23,7 +23,10 @@ public class Plane {
 	private int numberOfPoints;
 	private double height;
 
+	private HashMap<ClauseValue, Integer> connectedComponents;
 	private DirectedGraph minGraph;
+	private HashMap<PosPoint, Orientation> validConfiguration;
+	
 	private Map<ClauseValue, PosPoint> clauseToPoint;
 	
 	private SliderPoint[] sliderPoints;
@@ -96,6 +99,9 @@ public class Plane {
 			
 			debugPrint("currentHeight: " + height + ", minHeight: " + minHeight + ", maxHeight: " + maxHeight + ", difference: " + (maxHeight-minHeight));//DEBUG
 			
+			/**
+			 * OPTIMISATION POSSIBLE BY TAKING THE FOLLOWING OUT OF THE WHILE LOOP, AS IT ONLY HAS TO BE DONE ONCE.
+			 */
 			for(PosPoint p:posPoints){//make the top labels for all points.
 				addLabel(new Label(p, 1, true), labels);//shift=1 and top=true gives us the NE label;
 				addLabel(new Label(p, 0, true), labels);//shift=0 and top=true gives us the NW label;
@@ -108,6 +114,9 @@ public class Plane {
 					clauseToPoint.put((new Label(p, 0, true)).toClause(), p);
 				}
 			}
+			/**
+			 * END
+			 */
 			
 			ArrayList<Clause> clauses = new ArrayList<Clause>();//a list which will initially contain additional clauses.
 			//the additional clauses are required to fix the value of a dead label to the negation of the clauseValue of that label.
@@ -144,18 +153,25 @@ public class Plane {
 		
 		height = minHeight;
 		debugPrint("The height solution is: " + height);//DEBUG
+		clearLabels(posPoints);//clear all labels saved in the points
 		
 		Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));
-		debugPrint("dfs order:" + order.toString());	
-		while(!order.isEmpty()){
-			ClauseValue next = order.pop();
-			if(clauseToPoint.get(next).getPosition()==null){
-				getNext(next);
-			}
-			else{
-				//skip this point
+		debugPrint("dfs order:" + order.toString());
+		
+		for(PosPoint p : posPoints){
+			if(validConfiguration.containsKey(p)){
+				System.out.println("contained by");
+				p.setPosition(validConfiguration.get(p));
 			}
 		}
+		
+		//validConfiguration;
+		
+		while(!order.isEmpty()){
+			ClauseValue next = order.pop();
+			getNext(next);
+		}
+		
 		return posPoints;//return the array of points, now with correct positions.
 	}
 	
@@ -166,9 +182,12 @@ public class Plane {
 	public void getNext(ClauseValue next){
 		if(clauseToPoint.get(next).getPosition()==null){
 			clauseToPoint.get(next).setPosition(next.isPositive() ? 1 : 0,true);
-			if(!minGraph.edgesFrom(next).isEmpty()){			
+			System.out.println(minGraph.getGraph());
+			if(!minGraph.edgesFrom(next).isEmpty()){
 				for(ClauseValue value : minGraph.edgesFrom(next)){
-					getNext(value);
+					if(connectedComponents.get(value).equals(connectedComponents.get(next))){
+						getNext(value);
+					}	
 				}	
 			}
 		}
@@ -743,7 +762,7 @@ public class Plane {
 	 public ArrayList<Label> containsPoint(ArrayList<Label> labels, Label l){
 		 ArrayList<Label> contained = new ArrayList<Label>();//arraylist to be returned
 		 for(Label l2: labels){//for all labels in the labels arraylist
-			 if(!l2.getBoundPoint().equals(l.getBoundPoint()) && l.getRect().contains(l2.getX(),l2.getY())){//check if the point is in the label
+			 if(!l2.getBoundPoint().equals(l.getBoundPoint()) && contains(l.getRect(),l2.getX(),l2.getY(),true)){//check if the point is IN the label
 				 contained.add(l2);//if so, add it to contained
 			 }
 		 }
@@ -757,7 +776,7 @@ public class Plane {
 	     double h = rec.getHeight();
 	     
 	    if(in){
-	    	return w >= 0 && h > 0 && x > mx && x < mx + w && y > my && y < my + h;
+	    	return w > 0 && h > 0 && x > mx && x < mx + w && y > my && y < my + h;
 	    }
 	    else{
 	    	return w >= 0 && h >= 0 && x >= mx && x <= mx + w && y >= my && y <= my + h; 
@@ -825,6 +844,15 @@ public class Plane {
 			 }
 		 }
 		 minGraph = graph;
+		 connectedComponents = stronglyConnected;
+		 validConfiguration = new HashMap<PosPoint, Orientation>();
+		 for(PosPoint p : posPoints){
+			 if(p.getPosition()!=null){
+				 validConfiguration.put(p,p.getPosition());
+				 System.out.println("added position");
+			 }
+		 }
+		 
 		 return true;//in any other case return true, as there exists a solution to this problem.
 	 }
  
