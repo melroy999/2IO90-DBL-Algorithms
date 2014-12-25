@@ -35,7 +35,7 @@ public class Plane {
 
 	private double delta = 0.001;//difference of border
 	
-	private boolean debug = true;
+	private boolean debug = !true;
 
 	public Plane(double aspectRatio, SliderPoint[] points){
 		this.aspectRatio = aspectRatio;
@@ -56,26 +56,11 @@ public class Plane {
 		}
 	}
 	
-	public void removeLabel(Label label, ArrayList<Label> labels){
-		label.getBoundPoint().removeLabel(label);
-		labels.remove(label);
-	}
-	
 	public void addLabel(Label label, ArrayList<Label> labels){
 		label.getBoundPoint().addLabel(label);
 		labels.add(label);
 	}
 	
-	/**
-	 * 
-	 * @param points: the points given in the input of the program
-	 */
-	public void clearLabels(Point[] points){
-		for(Point p : points){//for all points
-			p.getLabels().clear();//clears the list of labels in the point p
-		}
-	}
-
 	/**
 	 * 
 	 * @return The solution to the 2pos problem. It first calculates the maximum height
@@ -85,87 +70,81 @@ public class Plane {
 	public PosPoint[] find2PosSolution(){
 	    int[] xSortedOrder = MergeSort.sort(posPoints);//sorting the points on x-cor, referencing by index in this array.
 
-	    int range = 10000;//TEMP for best performance find x-min and x-max, y-min and y-max and change the range to this.
+	    int range = 10000;//the range of the coordinates from 0 to range
 		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range+1,range+1));//new quadtree with (top) level 0 and dimensions (range+1)^2
 		
 		double minHeight = (aspectRatio < 1) ? 1 : (1/aspectRatio);//minimal height		
-		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);//2x the maximal height, so that we start with the calculated max-height in the loop.
+		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);//find the max height
 		height = maxHeight;//height to use is the average of max and min height
-		double lastHeight = 0;
+		double lastHeight = 0;//a value to find out if you are checking for the same height twice in succession.
 		
-		while(lastHeight != height){//while the difference isn't too small
-			clearLabels(posPoints);//clear all labels saved in the points
-			ArrayList<Label> labels = new ArrayList<Label>();//all labels will be stored in this arrayList. 
+		ArrayList<Label> allLabels = new ArrayList<Label>();//all labels will be stored in this arrayList, will be copied later after each iteration.
+		
+		clauseToPoint = new HashMap<ClauseValue, PosPoint>();
+		
+		for(PosPoint p :posPoints){//make the top labels for all points.
+			Label NE = new Label(p, 1, true);
+			addLabel(NE, allLabels);//shift=1 and top=true gives us the NE label;
+			clauseToPoint.put((NE).toClause(), p);
 			
-			debugPrint("currentHeight: " + height + ", minHeight: " + minHeight + ", maxHeight: " + maxHeight + ", difference: " + (maxHeight-minHeight));//DEBUG
-			
-			/**
-			 * OPTIMISATION POSSIBLE BY TAKING THE FOLLOWING OUT OF THE WHILE LOOP, AS IT ONLY HAS TO BE DONE ONCE.
-			 */
-			for(PosPoint p:posPoints){//make the top labels for all points.
-				addLabel(new Label(p, 1, true), labels);//shift=1 and top=true gives us the NE label;
-				addLabel(new Label(p, 0, true), labels);//shift=0 and top=true gives us the NW label;
-			}
-			
-			if(clauseToPoint==null){
-				clauseToPoint = new HashMap<ClauseValue, PosPoint>();
-				for(PosPoint p: posPoints){
-					clauseToPoint.put((new Label(p, 1, true)).toClause(), p);
-					clauseToPoint.put((new Label(p, 0, true)).toClause(), p);
-				}
-			}
-			/**
-			 * END
-			 */
-			
+			Label NW = new Label(p, 0, true);
+			addLabel(NW, allLabels);//shift=0 and top=true gives us the NW label;
+			clauseToPoint.put((NW).toClause(), p);
+		}
+		
+		while(lastHeight != height){//as long as the height is not equal to the last checked height
+			HashMap<PosPoint, Orientation> validOrientation = new HashMap<PosPoint, Orientation>();
+			ArrayList<Label> labels = new ArrayList<Label>(allLabels);//all labels will be stored in this arrayList. 	
 			ArrayList<Clause> clauses = new ArrayList<Clause>();//a list which will initially contain additional clauses.
+			
 			//the additional clauses are required to fix the value of a dead label to the negation of the clauseValue of that label.
-			HashMap<Label, ArrayList<Label>> collisions = findCollisions2pos(labels, clauses, quad, height);
+			HashMap<Label, ArrayList<Label>> collisions = findCollisions2pos(labels, clauses, validOrientation, quad, height);
 			//get the list of collisions	
+			
 			if (collisions!=null){//collisions will return null if a point with only dead labels exists
 				clauses.addAll(getClauses(collisions));//add the clauses generated with the collisions to the clauses list.
 				if(checkTwoSatisfiability(clauses)){//if a satisfiable configuration exists
 					minHeight = height;//this height will be valid, so the minimum height becomes this height.
-					debugPrint("Solution is possible");//DEBUG
+					validConfiguration = new HashMap<PosPoint, Orientation>(validOrientation);
 				}
 				else{//if no solution can be found with 2-sat
 					maxHeight = height;
 					//this height has no solution, so the maximum found height for which this does not work is now height
-					debugPrint("2-Sat has no solution.");//DEBUG
 				}
 			}
 			else {//if a point has only dead labels
 				maxHeight = height;
 				//this height has no solution, so the maximum found height for which this does not work is now height
-				debugPrint("A point is completely dead.");//DEBUG
 			}
 			
-			lastHeight = height;
+			lastHeight = height;//remember which height was used this iteration.
 			
-			height = (maxHeight+minHeight)/2;//height to use is the average of max and min height
-			double width = height * aspectRatio;
+			
+			/*
+			 * Calculate the next candidate value, considering that the distance between points is always an integer.
+			 * This means that the height or the width (or both) MUST be divisible by 0.5.
+			 */
+			
+			height = (maxHeight+minHeight)/2;//calculate the average of the maxHeight and minHeight
+			double width = height * aspectRatio;//calculate the width.
 			
 			height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
-			
-			debugPrint(height + " to " + roundToHalf(height) + "," + width + " to " + roundToHalf(width));
-			debugPrint("--------------------------------------------------------------------------");//DEBUG
+			//(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))): 
+			//	Find if the distance to next height or the next width is smaller than the other.
 		}
 		
 		height = minHeight;
-		debugPrint("The height solution is: " + height);//DEBUG
-		clearLabels(posPoints);//clear all labels saved in the points
-		
-		Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));
-		debugPrint("dfs order:" + order.toString());
 		
 		for(PosPoint p : posPoints){
 			if(validConfiguration.containsKey(p)){
-				System.out.println("contained by");
 				p.setPosition(validConfiguration.get(p));
 			}
 		}
 		
 		//validConfiguration;
+		
+		Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));
+		debugPrint("dfs order:" + order.toString());
 		
 		while(!order.isEmpty()){
 			ClauseValue next = order.pop();
@@ -182,7 +161,6 @@ public class Plane {
 	public void getNext(ClauseValue next){
 		if(clauseToPoint.get(next).getPosition()==null){
 			clauseToPoint.get(next).setPosition(next.isPositive() ? 1 : 0,true);
-			System.out.println(minGraph.getGraph());
 			if(!minGraph.edgesFrom(next).isEmpty()){
 				for(ClauseValue value : minGraph.edgesFrom(next)){
 					if(connectedComponents.get(value).equals(connectedComponents.get(next))){
@@ -479,7 +457,7 @@ public class Plane {
 	 * @param height, the height of the labels to check for.
 	 * @return a hashmap of all labels to an arraylist of labels they collide with. null if a dead point exists.
 	 */
-	public HashMap<Label, ArrayList<Label>> findCollisions2pos(ArrayList<Label> labels, ArrayList<Clause> clauses, QuadTree tree, double height){			
+	public HashMap<Label, ArrayList<Label>> findCollisions2pos(ArrayList<Label> labels, ArrayList<Clause> clauses, HashMap<PosPoint, Orientation> validOrientation, QuadTree tree, double height){			
 		HashMap<Label, ArrayList<Label>> collisions = new HashMap<Label, ArrayList<Label>>();//make a new hashmap of labels to arraylist of labels
 		if(posPoints!=null){//if we are not doing 1slider
 			tree.init(labels, height, aspectRatio, 10000);//initialize the quadtree
@@ -500,17 +478,17 @@ public class Plane {
 						//alive check is done later, to assure that labels that became alive by deleting a dead label are also present. 
 					}
 				}
-				for(Label l: toRemove){//for all labels that have to be removed
-					clauses.add(new Clause(l.toClause().negation(),
-							l.toClause().negation()));//add a clause to the clauses list that will force the negation of this table to be true;
-					p.setPosition((l.getShift()-1)*-1, l.isTop());//set the inverse dead label as the orientation.
-					//TODO how is this done in 4 position?
-					//This can be done in the form (x+x), with x being the negation of the cluaseValue.
-					//for (x + x),   x has to be true to satisfy!
-					removeLabel(l, labels);//remove the label from the labels list.
-				}
-				if(p.getLabels().isEmpty()){//if somehow all labels are dead for a point
+				if(toRemove.size()==2){//if somehow all labels are dead for a point
 					return null;//return null as collision value, associated with this error
+				}
+				else{
+					for(Label l: toRemove){//for all labels that have to be removed
+						clauses.add(new Clause(l.toClause().negation(),l.toClause().negation()));
+						//add a clause to the clauses list that will force the negation of this table to be true;
+						validOrientation.put(l.getBoundPoint(),getPosition((l.getShift()-1)*-1,l.isTop()));
+						//note that this point has a fixed position
+						labels.remove(l);//remove the label from the labels list.
+					}
 				}
 			}
 			
@@ -530,11 +508,11 @@ public class Plane {
 				}	
 				if(!alive.isEmpty()){//if the alive array is not empty
 					Label aliveLabel = alive.get(0);//get the first alive label in the list
-					p.setPosition(aliveLabel.getShift(), aliveLabel.isTop());//set the alive label as the orientation.
+					validOrientation.put(aliveLabel.getBoundPoint(), getPosition(aliveLabel.getShift(), aliveLabel.isTop()));
 					ArrayList<Label> pointLabels = new ArrayList<Label>(p.getLabels());//new arraylist of labels containing the labels associated with that point
 					//if a point has an alive label, we do not have to consider other collisions for this point.
 					for(Label l: pointLabels){//for all labels associated with this point
-						labels.remove(l);//TODO remove the label from the list, not remove it in the point itself, for later use.
+						labels.remove(l);//TODO remove the label from the list.
 						//TODO possibly remove the not alive labels, as they should never be chosen.
 					}
 					//TODO choose the alive label, one of the labels in alive
@@ -557,6 +535,26 @@ public class Plane {
 		}
 		return collisions;//return the list of collisions
 	}	
+	
+	public Orientation getPosition(double shift,boolean top){
+		if(shift==0){
+			if(top){
+				return Orientation.NW;
+			}
+			else{
+				return Orientation.SW;
+			}
+		}
+		else{
+			if(top){
+				return Orientation.NE;
+			}
+			else{
+				return Orientation.SE;
+			}
+		}
+		
+	}
 	
 	/**
 	 * 
@@ -843,15 +841,9 @@ public class Plane {
 				 return false;//so, return false, as the 2-sat is not satisfied.
 			 }
 		 }
+		 
 		 minGraph = graph;
 		 connectedComponents = stronglyConnected;
-		 validConfiguration = new HashMap<PosPoint, Orientation>();
-		 for(PosPoint p : posPoints){
-			 if(p.getPosition()!=null){
-				 validConfiguration.put(p,p.getPosition());
-				 System.out.println("added position");
-			 }
-		 }
 		 
 		 return true;//in any other case return true, as there exists a solution to this problem.
 	 }
