@@ -32,7 +32,7 @@ public class Plane {
 
 	private double delta = 0.001;//difference of border
 	
-	private boolean debug = true;
+	private boolean debug = !true;
 
 	public Plane(double aspectRatio, SliderPoint[] points){
 		this.aspectRatio = aspectRatio;
@@ -279,12 +279,14 @@ public class Plane {
 		int i;																									//sliderPoints must be sorted on x-coordinates
 		double minH = 0;
 		double maxH = MaxSize.getMaxPossibleHeight(sArray, pointer, aspectRatio, PlacementModel.ONESLIDER);
-		double T = 0.008;
-		delta= maxH/(Math.pow(2,(1000/(sArray.length * T))));
-		System.out.println("Precision: " + delta);
-		System.out.println("MaxSize gives: " + maxH);
+		double T = 0.01;
+		delta= 0.000000000000001; //maxH/(Math.pow(2,(1000/(sArray.length * T))));
+		//System.out.println("Precision: " + delta);
+		//System.out.println("MaxSize gives: " + maxH);
 		double currentH;
+		int xxxx = 0;
 		while (maxH-minH >= delta) {
+			//System.out.println(xxxx++);
 			boolean mayContinue = true;
 			currentH = (maxH + minH)/2;
 			debugPrint("Current: " + currentH);
@@ -341,7 +343,7 @@ public class Plane {
 		//height = Math.floor(minH*1000000000)*1000000000;
 		//height = minH;
 		BigDecimal lel = new BigDecimal(minH);
-		lel = lel.setScale(10, RoundingMode.FLOOR);
+		lel = lel.setScale(15, RoundingMode.FLOOR);
 		height = lel.doubleValue();
 	}
 	
