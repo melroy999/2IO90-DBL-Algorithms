@@ -36,8 +36,10 @@ public class MapLabeler {
 
 	private Plane plane;
 	private PlacementModel pModel;
-
+	
 	public static final boolean local = true;
+	
+	public static final long start = System.currentTimeMillis();
 
 	public MapLabeler() throws IOException{
 		//for(int points = 900; points <= 1000; points += 100){
@@ -59,7 +61,7 @@ public class MapLabeler {
 				}
 			    try {
 					readInput();
-					long start = System.currentTimeMillis();
+					//long start = System.currentTimeMillis();
 					solvePlacementProblem();
 					writeOutput();
 					long stop = System.currentTimeMillis();

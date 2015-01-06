@@ -35,7 +35,7 @@ public class Plane {
 	private PosPoint[] posPoints;
 
 	private double delta = 0.001;//difference of border
-	private boolean debug = true;
+	private boolean debug = !true;
 
 	public Plane(double aspectRatio, SliderPoint[] points){
 		this.aspectRatio = aspectRatio;
@@ -684,9 +684,10 @@ public class Plane {
 		//System.out.println("Precision: " + delta);
 		//System.out.println("MaxSize gives: " + maxH);
 		double currentH;
-		int xxxx = 0;
-		while (maxH-minH >= delta) {
-			//System.out.println(xxxx++);
+		double saveD = 0;
+		while ((maxH-minH >= delta) && (System.currentTimeMillis() - MapLabeler.start <= 10000) && (saveD != maxH-minH) ) {
+			saveD = maxH - minH;
+			System.out.println(saveD);
 			boolean mayContinue = true;
 			currentH = (maxH + minH)/2;
 			debugPrint("Current: " + currentH);
@@ -731,7 +732,7 @@ public class Plane {
 			if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
 				if ( checkNewSituation(sliderPoints, xPointArray, i) == false ) {				//check if the new situation would work																//current becomes up
 					i = -1;																		
-					System.out.println("WOOPS DIT ZAG IK NIET AANKOMEN");						//NIET GOED HELEMAAL NIET GOED
+					System.out.println("WOOPS1");						//NIET GOED HELEMAAL NIET GOED
 				}
 			}
 		}
@@ -745,6 +746,15 @@ public class Plane {
 		BigDecimal lel = new BigDecimal(minH);
 		lel = lel.setScale(15, RoundingMode.FLOOR);
 		height = lel.doubleValue();
+		for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].setNEWsize(height);}
+		for (i = sliderPoints.length -1; i >= 0; i--) {											//for every point, from right to left
+			if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
+				if ( checkNewSituation(sliderPoints, xPointArray, i) == false ) {				//check if the new situation would work																//current becomes up
+					i = -1;																		
+					System.out.println("WOOPS2");						//NIET GOED HELEMAAL NIET GOED
+				}
+			}
+		}
 	}
 
 	boolean checkNewSituation(SliderPoint[] sArray, int[] pointer, int pointLoc) {
