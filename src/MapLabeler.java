@@ -151,7 +151,7 @@ public class MapLabeler {
 			bw.newLine();
 			bw.write("number of points: " + plane.getNumberOfPoints());
 			bw.newLine();
-			bw.write("label height: " + plane.getHeight());
+			bw.write("height: " + plane.getHeight());
 			bw.newLine();
 			if(pModel == PlacementModel.ONESLIDER){
 				SliderPoint[] s = plane.getSliderPoints();
@@ -180,7 +180,7 @@ public class MapLabeler {
 			System.out.println("placement model: " + pModel.toString());
 			System.out.println("aspect ratio: " + plane.getAspectRatio());
 			System.out.println("number of points: " + plane.getNumberOfPoints());
-			System.out.println("label height: " + plane.getHeight());
+			System.out.println("height: " + plane.getHeight());
 			if(pModel == PlacementModel.ONESLIDER){
 				SliderPoint[] s = plane.getSliderPoints();
 				for(int i=0; i<s.length; i++){
