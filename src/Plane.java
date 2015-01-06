@@ -186,7 +186,7 @@ public class Plane {
 		//double maxHeight = 10000;
 
 		int[] xSortedOrder = MergeSort.sort(posPoints);//sorting the points on x-cor, referencing by index in this array.
-		double minHeight = (aspectRatio < 1) ? 1 : (1/aspectRatio);//minimal height		
+		double minHeight = (aspectRatio < 1) ? 1 : (1/(2*aspectRatio));//minimal height		
 		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);//2x the maximal height, so that we start with the calculated max-height in the loop.
 		maxHeight = 100;
 
@@ -487,7 +487,7 @@ public class Plane {
 					}
 				}
 			}
-
+			
 			tree.init(labels, height, aspectRatio, 10000);//initialize the tree again, now without the dead labels.
 			setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
 

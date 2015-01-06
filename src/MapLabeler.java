@@ -17,8 +17,8 @@ public class MapLabeler {
 	private Scanner sc;
 
 
-	private File input = new File("input.txt");
-	private File output = new File("output.txt");
+	private File input = new File("2pos100.txt");
+	private File output = new File("2pos100_solved.txt");
 
 	private Plane plane;
 	private PlacementModel pModel;
