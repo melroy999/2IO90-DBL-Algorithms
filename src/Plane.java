@@ -35,7 +35,7 @@ public class Plane {
 	private PosPoint[] posPoints;
 
 	private double delta = 0.001;//difference of border
-	private boolean debug = !true;
+	private boolean debug = true;
 
 	public Plane(double aspectRatio, SliderPoint[] points){
 		this.aspectRatio = aspectRatio;
@@ -73,7 +73,7 @@ public class Plane {
 		int range = 10000;//the range of the coordinates from 0 to range
 		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range+1,range+1));//new quadtree with (top) level 0 and dimensions (range+1)^2
 
-		double minHeight = (aspectRatio < 1) ? 1/2 : (1/(2*aspectRatio));//minimal height		
+		double minHeight = (aspectRatio < 1) ? 1d : (1d/(2d*aspectRatio));//minimal height	
 		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);//find the max height
 		height = maxHeight;//height to use initially is the max height.
 		double lastHeight = 0;//a value to find out if you are checking for the same height twice in succession.
@@ -105,7 +105,7 @@ public class Plane {
 			if (collisions!=null){//collisions will return null if a point with only dead labels exists
 				clauses.addAll(getClauses(collisions));//add the clauses generated with the collisions to the clauses list.
 				if(checkTwoSatisfiability(clauses)){//if a satisfiable configuration exists
-					if(minHeight < height){
+					if(minHeight <= height){
 						minHeight = height;//this height will be valid, so the minimum height becomes this height.
 						validConfiguration = new HashMap<PosPoint, Orientation>(validOrientation);
 					}
@@ -135,7 +135,26 @@ public class Plane {
 			height = (maxHeight+minHeight)/2;//calculate the average of the maxHeight and minHeight
 			double width = height * aspectRatio;//calculate the width.
 
-			height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
+			debugPrint(">" + height + "," + width + ":" + roundToHalf(height) + "," + roundToHalf(width) + ":" + Math.abs(height-roundToHalf(height)) + "," + Math.abs(width-roundToHalf(width)));
+			
+			//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
+			
+			if(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))){
+				if(roundToHalf(height)<maxHeight && roundToHalf(height) > minHeight){
+					height = roundToHalf(height);
+				}
+				else{
+					height = roundToHalf(width)/aspectRatio;
+				}
+			}
+			else{
+				if(roundToHalf(width)/aspectRatio<maxHeight && roundToHalf(width)/aspectRatio > minHeight){
+					height = roundToHalf(width)/aspectRatio;
+				}
+				else{
+					height = roundToHalf(height);
+				}
+			}
 			//(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))): 
 			//	Find if the distance to next height or the next width is smaller than the other.
 			debugPrint("new height: " + height);
