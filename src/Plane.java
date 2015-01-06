@@ -147,6 +147,12 @@ public class Plane {
 			ClauseValue next = order.pop();//pop the first element.
 			getNext(next);//check which elements this one is connected to.
 		}
+		
+		for(PosPoint p : posPoints){
+			if(p.getPosition()==null){
+				p.setPosition(Orientation.NE);
+			}
+		}
 
 		return posPoints;//return the array of points, now with correct positions.
 	}
@@ -800,70 +806,6 @@ public class Plane {
 	 */
 	public HashMap<Label, ArrayList<Label>> findCollisions2pos(ArrayList<Label> labels, ArrayList<Clause> clauses, HashMap<PosPoint, Orientation> validOrientation, QuadTree tree, double height){			
 		HashMap<Label, ArrayList<Label>> collisions = new HashMap<Label, ArrayList<Label>>();//make a new hashmap of labels to arraylist of labels
-		if(posPoints!=null){//if we are not doing 1slider
-			tree.init(labels, height, aspectRatio, 10000);//initialize the quadtree
-			setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
-
-			ArrayList<Label> toRemove;//to avoid the editing iteration items while iterating, add the dead labels to an arraylist
-			for(PosPoint p: posPoints){//for all points
-				toRemove = new ArrayList<Label>();//make a new arrayList for toRemove arraylist.
-				for(Label l: p.getLabels()){//for all labels in the point
-					if(l.isHasIntersect()){//if the label collides with other labels
-						if(!containsPoint(findIntersectionQuad(tree,l),l).isEmpty()){
-							//if the list of contained points is not empty for the specified label
-							toRemove.add(l);//add this label to the arraylist of dead labels
-						}
-					}
-					else{
-						//the label is safe, most likely alive.
-						//alive check is done later, to assure that labels that became alive by deleting a dead label are also present. 
-					}
-				}
-				if(toRemove.size()==2){//if somehow all labels are dead for a point
-					return null;//return null as collision value, associated with this error
-				}
-				else{
-					for(Label l: toRemove){//for all labels that have to be removed
-						clauses.add(new Clause(l.toClause().negation(),l.toClause().negation()));
-						//add a clause to the clauses list that will force the negation of this table to be true;
-						validOrientation.put(l.getBoundPoint(),getPosition((l.getShift()-1)*-1,l.isTop()));
-						//note that this point has a fixed position
-						labels.remove(l);//remove the label from the labels list.
-					}
-				}
-			}
-			
-			tree.init(labels, height, aspectRatio, 10000);//initialize the tree again, now without the dead labels.
-			setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
-
-			ArrayList<Label> alive;//arrayList of all alive labels, to be removed after the loop is done.
-			for(PosPoint p: posPoints){//for all points
-				alive = new ArrayList<Label>();//make a new alive arraylist
-				for(Label l: p.getLabels()){//for all labels in the point
-					if(!l.isHasIntersect()){//if the label has no intersections
-						alive.add(l);//it is alive, so add to the alive list
-					}
-					else {
-						//label is not alive, we will consider pending labels later.
-					}
-				}	
-				if(!alive.isEmpty()){//if the alive array is not empty
-					Label aliveLabel = alive.get(0);//get the first alive label in the list
-					validOrientation.put(aliveLabel.getBoundPoint(), getPosition(aliveLabel.getShift(), aliveLabel.isTop()));
-					ArrayList<Label> pointLabels = new ArrayList<Label>(p.getLabels());//new arraylist of labels containing the labels associated with that point
-					//if a point has an alive label, we do not have to consider other collisions for this point.
-					for(Label l: pointLabels){//for all labels associated with this point
-						labels.remove(l);//TODO remove the label from the list.
-						//TODO possibly remove the not alive labels, as they should never be chosen.
-					}
-					//TODO choose the alive label, one of the labels in alive
-				}
-				else{
-					//if no alive labels, we should continue to the pending labels
-				}
-			}	
-		}
-
 		tree.init(labels, height, aspectRatio, 10000);//now only use the leftover labels
 		setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
 
