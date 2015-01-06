@@ -26,7 +26,7 @@ public class Plane {
 
 	private HashMap<ClauseValue, Integer> connectedComponents;//saves the connected component number the clauseValue is part of.
 	private DirectedGraph minGraph;//saves the graph of the iteration with a solvable situation.
-	private HashMap<PosPoint, Orientation> validConfiguration;//stores the already chosen labels in a solvable situation.
+	private HashMap<PosPoint, Orientation> validConfiguration = new HashMap<PosPoint, Orientation>();//stores the already chosen labels in a solvable situation.
 
 	private Map<ClauseValue, PosPoint> clauseToPoint;//easily find the point connected to a clauseValue.
 
@@ -74,7 +74,7 @@ public class Plane {
 		int range = 10000;//the range of the coordinates from 0 to range
 		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range+1,range+1));//new quadtree with (top) level 0 and dimensions (range+1)^2
 
-		double minHeight = (aspectRatio < 1) ? 1 : (1/aspectRatio);//minimal height		
+		double minHeight = (aspectRatio < 1) ? 1/2 : (1/(2*aspectRatio));//minimal height		
 		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);//find the max height
 		height = maxHeight;//height to use initially is the max height.
 		double lastHeight = 0;//a value to find out if you are checking for the same height twice in succession.
@@ -94,6 +94,7 @@ public class Plane {
 		}
 
 		while(lastHeight != height){//as long as the height is not equal to the last checked height
+			debugPrint("Height: " + height + " lastHeight: " + lastHeight + " minHeight: " + minHeight + " maxHeight: " + maxHeight);
 			HashMap<PosPoint, Orientation> validOrientation = new HashMap<PosPoint, Orientation>();
 			ArrayList<Label> labels = new ArrayList<Label>(allLabels);//all labels will be stored in this arrayList. 	
 			ArrayList<Clause> clauses = new ArrayList<Clause>();//a list which will initially contain additional clauses.
@@ -105,7 +106,7 @@ public class Plane {
 			if (collisions!=null){//collisions will return null if a point with only dead labels exists
 				clauses.addAll(getClauses(collisions));//add the clauses generated with the collisions to the clauses list.
 				if(checkTwoSatisfiability(clauses)){//if a satisfiable configuration exists
-					if(minHeight<height){
+					if(minHeight < height){
 						minHeight = height;//this height will be valid, so the minimum height becomes this height.
 						validConfiguration = new HashMap<PosPoint, Orientation>(validOrientation);
 					}
@@ -123,7 +124,8 @@ public class Plane {
 				}
 				//this height has no solution, so the maximum found height for which this does not work is now height
 			}
-
+			
+		    debugPrint("new last height: " + height);
 			lastHeight = height;//remember which height was used this iteration.
 
 			/*
@@ -137,10 +139,13 @@ public class Plane {
 			height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
 			//(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))): 
 			//	Find if the distance to next height or the next width is smaller than the other.
+			debugPrint("new height: " + height);
 		}
 
 		height = minHeight;//To be sure that we have a valid height, take the minHeight found.
 
+		debugPrint("Resulting height: " + height + ", " + maxHeight + ", " + minHeight);
+		
 		for(PosPoint p : posPoints){//check for all points if there exists a valid label placement already.
 			if(validConfiguration.containsKey(p)){
 				p.setPosition(validConfiguration.get(p));//if so, set the position to the given value.
