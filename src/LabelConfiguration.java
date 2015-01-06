@@ -1,3 +1,4 @@
+
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Random;
@@ -117,8 +118,6 @@ public class LabelConfiguration {
 		lastChangePos = position;
 		lastChangeFrom = o;
 		lastChangeTo = to;
-		
-		
 		
 		//r.nextDouble() * 
 	}

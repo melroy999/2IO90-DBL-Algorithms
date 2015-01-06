@@ -35,7 +35,6 @@ public class Plane {
 	private PosPoint[] posPoints;
 
 	private double delta = 0.001;//difference of border
-
 	private boolean debug = !true;
 
 	public Plane(double aspectRatio, SliderPoint[] points){
@@ -685,12 +684,15 @@ public class Plane {
 		int i;																									//sliderPoints must be sorted on x-coordinates
 		double minH = 0;
 		double maxH = MaxSize.getMaxPossibleHeight(sArray, pointer, aspectRatio, PlacementModel.ONESLIDER);
-		double T = 0.008;
-		delta= maxH/(Math.pow(2,(1000/(sArray.length * T))));
-		System.out.println("Precision: " + delta);
-		System.out.println("MaxSize gives: " + maxH);
+		double T = 0.01;
+		delta= 0.000000000000001; //maxH/(Math.pow(2,(1000/(sArray.length * T))));
+		//System.out.println("Precision: " + delta);
+		//System.out.println("MaxSize gives: " + maxH);
 		double currentH;
-		while (maxH-minH >= delta) {
+		double saveD = 0;
+		while ((maxH-minH >= delta) && (System.currentTimeMillis() - MapLabeler.start <= 10000) && (saveD != maxH-minH) ) {
+			saveD = maxH - minH;
+			System.out.println(saveD);
 			boolean mayContinue = true;
 			currentH = (maxH + minH)/2;
 			debugPrint("Current: " + currentH);
@@ -735,7 +737,7 @@ public class Plane {
 			if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
 				if ( checkNewSituation(sliderPoints, xPointArray, i) == false ) {				//check if the new situation would work																//current becomes up
 					i = -1;																		
-					System.out.println("WOOPS DIT ZAG IK NIET AANKOMEN");						//NIET GOED HELEMAAL NIET GOED
+					System.out.println("WOOPS1");						//NIET GOED HELEMAAL NIET GOED
 				}
 			}
 		}
@@ -747,8 +749,17 @@ public class Plane {
 		//height = Math.floor(minH*1000000000)*1000000000;
 		//height = minH;
 		BigDecimal lel = new BigDecimal(minH);
-		lel = lel.setScale(10, RoundingMode.FLOOR);
+		lel = lel.setScale(15, RoundingMode.FLOOR);
 		height = lel.doubleValue();
+		for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].setNEWsize(height);}
+		for (i = sliderPoints.length -1; i >= 0; i--) {											//for every point, from right to left
+			if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
+				if ( checkNewSituation(sliderPoints, xPointArray, i) == false ) {				//check if the new situation would work																//current becomes up
+					i = -1;																		
+					System.out.println("WOOPS2");						//NIET GOED HELEMAAL NIET GOED
+				}
+			}
+		}
 	}
 
 	boolean checkNewSituation(SliderPoint[] sArray, int[] pointer, int pointLoc) {
