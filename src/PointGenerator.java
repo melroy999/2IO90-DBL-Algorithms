@@ -25,53 +25,53 @@ public class PointGenerator {
     }
 
     public void handler(){
-        r = new Random(test);
-        //for(int id = 100; id <= 10000; id += 100){
-        //int id = 100000;
-        placementModel = "1slider";
-        ratio = r.nextFloat() * 3;
-        density = 0.1;
-        int pointsAmount = 30;
-        int width = 100;
-        int height = 100;
-
-
-
-
-        if(noise){
-            System.out.println("Generating noise");
-            float[][] baseNoise = GenerateWhiteNoise(width, height);
-            //float[][] baseNoise = GetEmptyArray(width,height);
-            float[][] perlinNoise =  GeneratePerlinNoise(baseNoise, 5);
-            perlinNoise = AdjustLevels(perlinNoise, 0.0f, 1.0f);
-
-            fiets:
-                for(int i = 0; i < width; i++){
-                    for(int j = 0; j < height; j++){
-                        if(perlinNoise[i][j] > 0.5d){
-                            if(r.nextDouble() < density){
-                                p.add(new Point(i,j));
-                            }
-
-                        }
-                    }
-                }
-            Collections.shuffle(p);
-
-        }
-        else {
-            r.setSeed((long) test * 30 * 4587);
-            createPoints(pointsAmount);
-            Collections.shuffle(p);
-        }
-
-        try {
-            writeOutput();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        //}
-        System.out.println("Done");
+    	r = new Random(test);
+		//for(int id = 100; id <= 10000; id += 100){
+		//int id = 100000;
+			output = new File("tests/gaatfout/10_4pos_notdense.txt");
+			placementModel = "4pos";
+			ratio = r.nextFloat() * 3;
+			density = 0.001;
+			int pointsAmount = 10;
+			int width = 100;
+			int height = 100;
+			
+			
+			
+			
+			if(noise){
+				System.out.println("Generating noise");
+				float[][] baseNoise = GenerateWhiteNoise(width, height);
+				//float[][] baseNoise = GetEmptyArray(width,height);
+		        float[][] perlinNoise =  GeneratePerlinNoise(baseNoise, 5);
+		        perlinNoise = AdjustLevels(perlinNoise, 0.0f, 1.0f);
+		        
+		        for(int i = 0; i < width; i++){
+					for(int j = 0; j < height; j++){
+						if(perlinNoise[i][j] > 0.5d){
+							if(r.nextDouble() < density){
+								p.add(new Point(i,j));
+							}
+							
+						}
+					}
+				}
+		        Collections.shuffle(p);
+				
+			}
+			else {
+				r.setSeed((long) test * 10000 * 4587);
+				createPoints(pointsAmount);
+				Collections.shuffle(p);
+			}
+			
+			try {
+				writeOutput();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		//}
+		System.out.println("Done");
 
     }
 

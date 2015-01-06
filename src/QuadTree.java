@@ -1,7 +1,6 @@
 
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.Random;
 
 public class QuadTree {
 
@@ -11,12 +10,14 @@ public class QuadTree {
 	private ArrayList<Label> elements;
 	public Rectangle2D bounds;
 	private QuadTree[] nodes;
-	private Random r = new Random();
+	//private Random r = new Random();
 	
 	public QuadTree(int l, Rectangle2D b){
 		
 		level = l;
 		bounds = b;
+		
+		
 		
 		//System.out.println(bounds);
 		
@@ -26,10 +27,9 @@ public class QuadTree {
 		//drawPoint(new Vector2f(5,5), 3.1f, Color.GREEN);
 		
 	}
-		
+	
+	
 	public void printTree(){
-		Rectangle2D r = bounds;
-		
 		double subWidth = (double)(bounds.getWidth() / 2.0f);
 		double subHeight = (double)(bounds.getHeight() / 2.0f);
 		 
@@ -65,12 +65,21 @@ public class QuadTree {
 				Point b = elements.get(i).getBoundPoint();
 				if(a == b) elements.remove(i); 
 			}
-			l.setHasIntersect(false);
+			//l.setHasIntersect(false);
 			elements.remove(l);
 		}
 		else {
 			nodes[pos].remove(l);
 		}
+	}
+	
+	public void updateLabel(Label l, double height, double ratio){
+		//System.out.println("lChanged1: " + l.isHasIntersect());
+		remove(l);
+		//System.out.println("lChanged2: " + l.isHasIntersect());
+		insertNew(l,height,ratio);
+		//System.out.println("lChanged3: " + l.isHasIntersect());
+		//System.out.println("height will instert: " + height);
 	}
 	
 	/**
@@ -80,7 +89,7 @@ public class QuadTree {
 	 * @param ratio; aspect ratio of the label;
 	 */
 	public void insertNew(Label l, double height, double ratio){
-		l.setHasIntersect(false);
+		//l.setHasIntersect(false);
     	double top = l.getBoundPoint().getY() + (l.isTop() ? height : 0);
         double bottom = top - height;
         double right = l.getBoundPoint().getX() + (height * ratio * l.getShift());
@@ -157,11 +166,14 @@ public class QuadTree {
 	
 	public void init(ArrayList<Label> labels, double vSize, double ratio, int range){
 		this.empty();
+		
+		
 		this.bounds = new Rectangle2D.Double(0 - vSize * ratio,0 - vSize,range + (2 * vSize * ratio),range + (2 * vSize));
     	
 		for (Label l: labels) l.setHasIntersect(false);
     	for (int i = 0; i < labels.size(); i++) {
     		Label l = labels.get(i);
+    		l.setHasIntersect(false);
     		double top = l.getBoundPoint().getY() + (l.isTop() ? vSize : 0);
             double bottom = top - vSize;
             double right = l.getBoundPoint().getX() + (vSize * ratio * l.getShift());
@@ -181,9 +193,9 @@ public class QuadTree {
 		this.empty();
 		this.bounds = new Rectangle2D.Double(0 - vSize * ratio,0 - vSize,range + (2 * vSize * ratio),range + (2 * vSize));
     	
-		for (int i = 0; i < labels.length; i++) labels[i].setHasIntersect(false);
-    	for (int i = 0; i < labels.length; i++) {
+		for (int i = 0; i < labels.length; i++) {
     		Label l = labels[i];
+    		l.setHasIntersect(false);
     		double top = l.getBoundPoint().getY() + (l.isTop() ? vSize : 0);
             double bottom = top - vSize;
             double right = l.getBoundPoint().getX() + (vSize * ratio * l.getShift());
@@ -207,7 +219,7 @@ public class QuadTree {
 	 */
 	private int getPos(Label l) {
 		Rectangle2D pRect = l.getRect();
-		
+		//System.out.println(pRect);
 		int index = -1;
 		double verticalMidpoint = bounds.getX() + (bounds.getWidth() / 2.0);
 		double horizontalMidpoint = bounds.getY() + (bounds.getHeight() / 2.0d);
@@ -215,7 +227,12 @@ public class QuadTree {
 		//drawPoint(new Vector2f((double)verticalMidpoint,(double)horizontalMidpoint), 0.05f, Color.WHITE);
 		
 		// Object can completely fit within the top quadrants
-		boolean topQuadrant = (pRect.getY() < horizontalMidpoint && pRect.getY() + pRect.getHeight() < horizontalMidpoint);
+		boolean topQuadrant = (
+				pRect.getY() < 
+				horizontalMidpoint && 
+				pRect.getY() + 
+				pRect.getHeight() < 
+				horizontalMidpoint);
 		// Object can completely fit within the bottom quadrants
 		boolean bottomQuadrant = (pRect.getY() > horizontalMidpoint);
 		

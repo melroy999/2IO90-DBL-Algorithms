@@ -3,6 +3,7 @@ import java.awt.geom.Rectangle2D;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -177,136 +178,479 @@ public class Plane {
 	public Label[] labels;
 	
 	Random r = new Random();
+	long timeColDect = 0;
+	//long timeColDect = 0;
+	private QuadTree quad;
+	private Orientation from;
+	private Orientation to;
+	boolean print = false;
+	
 	public Label[] find4PosSolutionSA(){
+		double coolingRate = 0.0003;
+		double initialTemp = 10000;
+		double initialHeight = 100;
 		
 		
 		int range = 10000;
 		
 		
-		double coolingRate = 0.003;
 		
 		LabelConfiguration best = null;
-		int bestEnergy;
-		
-		
-		
-		//double maxHeight = 10000;
+		int bestEnergy = Integer.MAX_VALUE;
 		
 		int[] xSortedOrder = MergeSort.sort(posPoints);//sorting the points on x-cor, referencing by index in this array.
-		double minHeight = (aspectRatio < 1) ? 1 : (1/aspectRatio);//minimal height		
+		double minHeight = (aspectRatio < 1) ? 1 : (1/(2*aspectRatio));//minimal height	
+		//TODO Melroy: minimale height is een half keer de aspectratio de 2* moet er bij
 		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);//2x the maximal height, so that we start with the calculated max-height in the loop.
-		maxHeight = 100;
+		maxHeight = initialHeight;
 		
 		height = maxHeight;//height to use is the average of max and min height
 		double lastHeight = 0;
 		
 		LabelConfiguration finalBest = null;
-		int finalBestEnergy = Integer.MAX_VALUE;
 		double finalHeight = 0;
 		
+		quad = new QuadTree(0, new Rectangle(0,0,range,range));
+		
+		
+		
+		
 		while(lastHeight != height){
-			System.out.println(height);
-			//height = 10;
-			double temp = 10000;
 			
-			LabelConfiguration current = new LabelConfiguration(posPoints);
+			LabelConfiguration current = new LabelConfiguration(posPoints, height, aspectRatio);
+			
+			
+			debugPrint("------>  height: " + height);
 			
 			best = new LabelConfiguration(current.getLabels());
-			bestEnergy = calculateScore(best);
-			
-			//System.out.println("BEst: " + bestEnergy);
+			quad.init(current.getLabels(), height, aspectRatio, 10000);//initialize the quadtree
 			labels = current.getLabels();
 			
+			int currentEnergy = calculateScore(quad, Integer.MAX_VALUE, null, null, null);
+			
+			bestEnergy = currentEnergy;
+			int neighbourEnergy;
+			
+			simulatedAnnealing:
+			for(int iteration = 0; iteration < 5; iteration++){
+				double temp = initialTemp;
+				System.out.println("Iteration: " + iteration);
+			
+			
+			
 			while(temp > 1 && bestEnergy > 0){
-				//System.out.println(temp);
-				
-				int currentEnergy = calculateScore(current);
-				//System.out.println("old: " + current);
-				
-				
-				LabelConfiguration newSolution = new LabelConfiguration(current.getLabels());
+				LabelConfiguration newSolution = current;
 				int position = (int) (newSolution.labelSize() * r.nextDouble());
-				newSolution.change(position);
 				
-				int neighbourEnergy = calculateScore(newSolution);
+				Label lChanged = labels[position];
+				ArrayList<Label> before = getIntersections(quad,lChanged);
 				
-				//System.out.println("new: " + newSolution);
 				
+				//Orientation[] options = new Orientation[]{Orientation.NE, Orientation.NW, Orientation.SE, Orientation.SW};
+				ArrayList<Orientation> options = new ArrayList<Orientation>();
+				options.add(Orientation.NE);
+				options.add(Orientation.NW);
+				options.add(Orientation.SE);
+				options.add(Orientation.SW);
+				
+				
+				
+				newSolution.change(position, options);
+				quad.updateLabel(lChanged, height, aspectRatio);
+				labels = current.getLabels();
+				ArrayList<Label> after = getIntersections(quad,lChanged);
+				
+				Orientation initial = newSolution.getLastFrom();
+				
+				//System.out.println("Initial: " + initial);
+				
+				int counter = 0;
+				from = initial;
+				to = newSolution.getLastTo();
+				boolean triedall = false;
+				while(!containsPoint2(after,lChanged, height).isEmpty()){
+					//System.out.println("To: " + newSolution.getLastTo());
+					//System.out.println("Iteration" + counter);
+					counter++;
+					if(options.size() == 0){
+						if(!triedall){
+							options.add(initial);
+							triedall = true;
+						}
+						else {
+							System.out.println("AAAAAAAAAAAAAAAHHHH HEIGHT " + height + " NOT POSSIBLE");
+							bestEnergy = Integer.MAX_VALUE;
+							break simulatedAnnealing;
+						}
+					}
+					
+					newSolution.change(position, options);
+					quad.updateLabel(lChanged, height, aspectRatio);
+					labels = current.getLabels();
+					after = getIntersections(quad,lChanged);
+					
+					
+					
+				}
+				
+				/*
+				if(containsPoint(after,lChanged).isEmpty()){
+					System.out.println("   Does not contain");
+				}
+				else {
+					System.out.println("   Does contain");
+				}*/
+				
+				
+				
+				
+				
+				neighbourEnergy = calculateScore(quad, currentEnergy, lChanged, before, after);
+				
+				
+				if(neighbourEnergy < bestEnergy){
+					labels = newSolution.getLabels();
+					//if(oldIntersect(false) != neighbourEnergy){
+						//System.out.println("Changed: " + lChanged);
+					//	oldIntersect(true);
+					//}
+				}
 				
 				if (calculateAcceptance(currentEnergy, neighbourEnergy, temp) > r.nextDouble()) {
-					//System.out.println("new for " + neighbourEnergy);
-	                current = new LabelConfiguration(newSolution.getLabels());
+					current = newSolution;
+					currentEnergy = neighbourEnergy;
 	            }
 				else {
-					//System.out.println("NOT NEW FOR " + neighbourEnergy);
+					
+					newSolution.changeBack(initial);
+					
+					//System.out.println("^^^ Not accepted");
+					//System.out.print("          changed back: ");
+					for(int i = 0; i < changed.size(); i++){
+						Label l = changed.get(i);
+						boolean had = l.isHasIntersect();
+						l.setHasIntersect(!had);
+						//System.out.print(l + " to " + !had + ", ");
+					}
+					//System.out.println();
+					quad.updateLabel(lChanged, height, aspectRatio);
+					current = newSolution;
+					
+					
+					//labels = current.getLabels();
+					//oldIntersect(true);
+					
 				}
 				if (neighbourEnergy < bestEnergy) {
-					//System.out.println("#################### New best" + neighbourEnergy);
-					//System.out.println("     " + newSolution);
-	                best = new LabelConfiguration(newSolution.getLabels());
+					debugPrint("^new best: " + neighbourEnergy);
+					
+					//labels = newSolution.getLabels();
+					//oldIntersect(true);
+					
+					
+					best = new LabelConfiguration(newSolution.getLabels());
 	                bestEnergy = neighbourEnergy;
 	            }
 				
-				
-				
 				temp *= 1-coolingRate;
-	            
-				
+			}
 			}
 			
 			if(bestEnergy == 0){
-				
 				if(finalHeight < height){
-					//System.out.println("CHANGE THE FINAL THING ######################################3");
-					finalBestEnergy = bestEnergy;
 					finalBest = new LabelConfiguration(best.getLabels());
 					finalHeight = height;
 				}
-				
 				minHeight = height;
 			}
 			else {
 				maxHeight = height;
 			}
 			
-			lastHeight = height;
+
 			
+			
+			
+			lastHeight = height;
 			height = (maxHeight+minHeight)/2;//height to use is the average of max and min height
 			double width = height * aspectRatio;
-			
 			height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
-			
-			//System.out.println("Best " + best);
-			//System.out.println("Best: " + bestEnergy);
-			
-			
 		}
 		height = minHeight;
-		System.out.println("FINAL HEIGHT: " + height);
-		System.out.println("FINAL BEST: " + finalBest);
+		
+		if(finalBest == null){
+			finalBest = best;
+			debugPrint("NOT FOUND");
+		}
+		
+		debugPrint("FINAL HEIGHT: " + height);
+		//debugPrint("FINAL BEST ENERGY: " + bestEnergy);
+		debugPrint("FINAL BEST: " + finalBest);
+		
+		labels = finalBest.getLabels();
+		oldIntersect(true);
+		
+		debugPrint("Time for collision detection: " + timeColDect);
 		return finalBest.getLabels();
 	}
 	
 	private double calculateAcceptance(int oldEnergy, int newEnergy, double temperature){
-		//System.out.println("old: " + oldEnergy);
-		//System.out.println("new: " + newEnergy);
-		
 		if(newEnergy < oldEnergy){
-			//System.out.println("better");
 			return 1.0;
 		}
 		return Math.exp((oldEnergy - newEnergy) / temperature);
 	}
 	
+	public ArrayList<Label> containsPoint2(ArrayList<Label> labels, Label l, double height){
+		 ArrayList<Label> contained = new ArrayList<Label>();//arraylist to be returned
+		 for(Label l2: labels){//for all labels in the labels arraylist
+			 PosPoint p = l.getBoundPoint();
+			 PosPoint p2 = l2.getBoundPoint();
+			 if(!p2.equals(p) && l.getRect().contains(l2.getX(),l2.getY())){//check if the point is in the label
+				 if(p.getX() != p2.getX() && p.getY() != p2.getY() && p.getX() != p2.getX() + height && p.getX() != p2.getX() - height && p.getY() != p2.getY() + height && p.getY() != p2.getY() - height){
+				 contained.add(l2);//if so, add it to contained
+				 }
+			 }
+		 }
+		 //System.out.println(l + " Contains: " + contained);
+			
+		 return contained;//return the contained list
+	 }
 	
-	private int calculateScore(LabelConfiguration config){
-		int range = 10000;
-		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range,range));
-		quad.init(config.getLabels(), height, aspectRatio, 10000);//initialize the quadtree
-		int amount = countIntersections(quad, config.getLabels());//gives all labels the correct boolean value for intersection.
-		//System.out.println(amount);
+	
+	ArrayList<Label> changed = new ArrayList<Label>();
+	
+	private int calculateScore(QuadTree quad, int oldScore, Label lChanged, ArrayList<Label> before, ArrayList<Label> after){
+		long start = System.currentTimeMillis();
+		int amount = 0;
+		
+		if(lChanged == null){
+			
+			for(int i = 0; i < labels.length; i++){
+				labels[i].setHasIntersect(false);
+			}
+			for(int i = 0; i < labels.length; i++){
+				Label l = labels[i];
+				if(!l.isHasIntersect()){
+					ArrayList<Label> returnObjects = new ArrayList<Label>();
+					quad.retrieve(returnObjects, l);
+					for(int j = 0; j < returnObjects.size(); j++){
+						Label label2 = returnObjects.get(j);
+						if(intersects(l, label2)){
+							if(!l.isHasIntersect()){
+								l.setHasIntersect(true);
+								amount++;
+							}
+							if(!label2.isHasIntersect()){
+								label2.setHasIntersect(true);
+								amount++;
+							}
+						}	
+					}	
+				}
+			}
+		}
+		else {
+			
+			changed = new ArrayList<Label>();
+			
+			ArrayList<Label> add = new ArrayList<Label>();
+			
+			//debugPrint("Old Score : " + oldScore);
+			amount = oldScore;
+			
+			for (Label l : after){
+				if (!before.contains(l)) before.add(l);
+			}
+			
+			if (!before.contains(lChanged)) { before.add(lChanged); }
+			
+			
+			if(print) System.out.print("      Current: ");
+			for(int i = 0; i < labels.length; i++){
+				if(labels[i].isHasIntersect()) if(print) System.out.print(labels[i] + " ");
+			}
+			if(print) System.out.println();
+			
+			
+			if(print) System.out.println("      Changed: " + lChanged + " comming from: " + from + " to " + to);
+			if(print) System.out.print("      Remove : ");
+			
+			int subtract = 0;
+			for(int i = 0; i < before.size(); i++){
+				Label l = before.get(i);
+				if(l.isHasIntersect()) {
+					changed.add(l);
+					if(print) System.out.print(l + " ");
+					l.setHasIntersect(false);
+					subtract++;
+				}
+				
+			}
+			if(print) System.out.println();
+			
+			amount = amount - subtract;
+			
+			if(print) System.out.print("      Add    : ");
+			
+			for(int i = 0; i < before.size(); i++){
+				Label l = before.get(i);
+				if(!l.isHasIntersect()){
+					ArrayList<Label> returnObjects = new ArrayList<Label>();
+					quad.retrieve(returnObjects, l);
+					for(int j = 0; j < returnObjects.size(); j++){
+						Label label2 = returnObjects.get(j);
+						if(intersects(l, label2)){
+							if(!l.isHasIntersect()){
+								if(!add.contains(l)) add.add(l);
+								if(print) System.out.print(l + " ");
+								l.setHasIntersect(true);
+								amount++;
+							}
+							if(!label2.isHasIntersect()){
+								if(!add.contains(label2)) add.add(label2);
+								if(print) System.out.print(label2 + " ");
+								label2.setHasIntersect(true);
+								amount++;
+							}
+						}	
+					}	
+				}
+			}
+			
+			if(print) System.out.println();
+			
+			if(print) System.out.print("      Current: ");
+			for(int i = 0; i < labels.length; i++){
+				if(labels[i].isHasIntersect()) if(print) System.out.print(labels[i] + " ");
+			}
+			if(print) System.out.println();
+			
+			
+			
+			for(int i = 0; i < add.size(); i++){
+				Label l = add.get(i);
+				if(!changed.contains(l)) changed.add(l);
+				else changed.remove(l);
+			}
+			
+			if(print) System.out.print("      Changed: ");
+			
+			for(int i = 0; i < changed.size(); i++){
+				if(print) System.out.print(changed.get(i) + " ");
+			}
+			
+			
+			if(print) System.out.println();
+			if(print) System.out.println();
+			
+			
+		}
+		long stop = System.currentTimeMillis();
+		timeColDect += (stop-start);
 		return amount;
 	}
+	
+	
+	
+	
+	public ArrayList<Label> getIntersections(QuadTree tree, Label l){
+		 ArrayList<Label> possibleInters = new ArrayList<Label>();
+		 ArrayList<Label> intersections = new ArrayList<Label>();
+		 tree.retrieve(possibleInters, l);
+		 for(Label l2: possibleInters){
+			 if(intersects(l, l2)){
+				 intersections.add(l2);
+			 }
+		 }
+		 return intersections;
+	 }
+	
+	
+	public int oldIntersect(boolean print){
+		//boolean print = true;
+		//print = false;
+		
+		int range = 10000;
+		int amount = 0;
+		Label[] otherLabels = new Label[labels.length];
+		
+		
+		if(print) System.out.print("  Before: ");
+		for(int i = 0; i < labels.length; i++){
+			if(print) if(labels[i].isHasIntersect())  System.out.print(labels[i] + " ");
+		}
+		if(print) System.out.println();
+		
+		
+		//otherLabels = labels.clone();
+		
+		for(int i = 0; i < labels.length; i++){
+			otherLabels[i] = new Label(labels[i]);
+			otherLabels[i].setHasIntersect(false);
+		}
+		
+		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range,range));
+		quad.init(otherLabels, height, aspectRatio, 10000);//initialize the quadtree
+		
+		
+		ArrayList<Label> intersecting = new ArrayList<Label>();
+		
+		
+		for(int i = 0; i < otherLabels.length; i++){
+			Label l = otherLabels[i];
+			
+			if(!intersecting.contains(l)){
+				ArrayList<Label> returnObjects = new ArrayList<Label>();
+				quad.retrieve(returnObjects, l);
+				for(int j = 0; j < returnObjects.size(); j++){
+					Label label2 = returnObjects.get(j);
+					if(intersects(l, label2)){
+						if(!intersecting.contains(l)){
+							intersecting.add(l);
+							amount++;
+						}
+						if(!intersecting.contains(label2)){
+							intersecting.add(label2);
+							amount++;
+						}
+					}	
+				}	
+			}
+		}
+		
+		if(print) System.out.print("Currently intersected: " + amount + ": ");
+		
+		
+		for(int j = 0; j < intersecting.size(); j++){
+			if(print) System.out.print(intersecting.get(j) + " ");
+		}
+		if(print) System.out.println();
+		
+		//System.out.println();
+		
+		return amount;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
@@ -597,6 +941,11 @@ public class Plane {
     		return true;
     	}
 		
+		if(la.getBoundPoint() == lb.getBoundPoint()){
+			//System.out.print("Same boundpoint");
+			return false;
+		}
+		
 		if(al == bl && ar == br && ab == bb && at == bt){
 			return false;
 		}
@@ -643,29 +992,7 @@ public class Plane {
 	
 	
 	
-	public int countIntersections(QuadTree tree, Label[] labels){
-		int amount = 0;
-		for(int i = 0; i < labels.length; i++){
-			Label l = labels[i];
-			if(!l.isHasIntersect()){
-				ArrayList<Label> returnObjects = new ArrayList<Label>();
-				tree.retrieve(returnObjects, l);
-				for(Label label2: returnObjects){
-					//label2.hasIntersect = false;
-					
-					if(intersects(l, label2)){
-						l.setHasIntersect(true);
-						amount++;
-						if(!label2.isHasIntersect()){
-							label2.setHasIntersect(true);
-							amount++;
-						}
-					}	
-				}	
-			}
-		}
-		return amount;
-	 }
+	
 	
 
 	/**
@@ -678,11 +1005,7 @@ public class Plane {
 			 Label l = labels.get(i);
 
 			 if(!l.isHasIntersect()){
-				 double l1 = l.getRect().getX();
-				 double r1 = l.getRect().getX() + l.getRect().getWidth();
-				 double b1 = l.getRect().getY();
-				 double t1 = l.getRect().getY() + l.getRect().getHeight();
-	
+				
 				 ArrayList<Label> returnObjects = new ArrayList<Label>();
 				 tree.retrieve(returnObjects, l);
 				 for(Label label2: returnObjects){

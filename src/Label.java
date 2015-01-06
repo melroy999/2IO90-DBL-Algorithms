@@ -86,30 +86,33 @@ public class Label {
 	public void setOrientation(Orientation o){
 		if(o == Orientation.NE){
 			this.top = true;
-			this.shift = 1;
+			this.shift = 1.0f;
 		}
 		else if(o == Orientation.NW){
 			this.top = true;
-			this.shift = 0;
+			this.shift = 0.0f;
 		}
 		else if(o == Orientation.SE){
 			this.top = false;
-			this.shift = 1;
+			this.shift = 1.0f;
+		}
+		else if(o == Orientation.SW) {
+			this.top = false;
+			this.shift = 0.0f;
 		}
 		else {
-			this.top = false;
-			this.shift = 0;
+			System.out.println("WTF?");
 		}
 		
 	}
 	
 	public Orientation getOrientation(){
 		Orientation o = Orientation.NW;
-		if(Math.abs(this.shift) < 0.00001){
+		if(this.shift < 0.5){
 			if(this.top) o = Orientation.NW;
 			if(!this.top) o = Orientation.SW;
 		}
-		if(Math.abs(this.shift - 1) < 0.000001){
+		if(this.shift > 0.5){
 			if(this.top) o = Orientation.NE;
 			if(!this.top) o = Orientation.SE;
 		}
@@ -233,8 +236,11 @@ public class Label {
 	 * Do not use this function to get the value of the label in string form to be used in clauses!	 
 	 */
 	public String toString(){
-		return (boundPoint.toString() + "|" + (shift==0 ? "L" : "R") + (top ? ("|1") : ("|0")));
-		//returns a string of the form x~y|direction|top
+		String ret = "";
+		//ret += Integer.toHexString(System.identityHashCode(this)) + ": ";
+		ret += boundPoint.toString() + "|" + (shift<0.5 ? "L" : "R") + (top ? ("|T") : ("|B"));
+		return (ret);
+		//returns a string of the form x~y|direction|to
 	}
 	
 	/**

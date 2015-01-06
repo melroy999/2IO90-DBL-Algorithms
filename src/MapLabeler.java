@@ -16,9 +16,17 @@ public class MapLabeler {
 	private Scanner sc;
 
 
-	private File input = new File("test/pointsamm_100_4pos.txt");
-	private File output = new File("test/pointsamm_100_4pos_solved.txt");
-
+	//private File input = new File("tests/pointsamm_100_4pos_notdense2.txt");
+	//private File output = new File("tests/pointsamm_100_4pos_notdense2_solved.txt");
+	
+	
+	private File input = new File("tests/gaatfout/ters.txt");
+	private File output = new File("tests/gaatfout/ters_solved.txt");
+	
+	//private File input = new File("tests/gaatfout/testert3.txt");
+	//private File output = new File("tests/gaatfout/testert3_solved.txt");
+	
+	
 	private Plane plane;
 	private PlacementModel pModel;
 
