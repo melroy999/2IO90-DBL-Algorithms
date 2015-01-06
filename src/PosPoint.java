@@ -29,6 +29,10 @@ public class PosPoint extends Point{
 		}
 	}	
 	
+	public void setPosition(Orientation position){
+		this.position = position;
+	}
+	
 	public void resetPosition(){
 		position = null;
 	}

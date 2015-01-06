@@ -7,7 +7,6 @@ public class Label {
 	// public Vector2i boundPoint;
 	private PosPoint boundPoint;
 	private Rectangle2D rect;
-	private boolean viable;
 	private int index;
 
 	private int ltDeg = 0;
@@ -24,26 +23,23 @@ public class Label {
 		this.boundPoint = point;
 		this.shift = labelShift;
 		this.top = labelTop;
-		this.viable = true;
+	}
+	
+	public Label(PosPoint point, float labelShift, boolean labelTop, int index) {
+		this.boundPoint = point;
+		this.shift = labelShift;
+		this.top = labelTop;
+		this.index = index;
 	}
 	
 	public Label(Label l){
 		this.boundPoint = l.getBoundPoint();
 		this.shift = l.getShift();
 		this.top = l.top;
-		this.viable = l.viable;
 	}
 	
 	public int getIndex(){
 		return index;
-	}
-	
-	public void setViability(boolean viability){
-		this.viable = viability;
-	}
-	
-	public boolean getViability(){
-		return this.viable;
 	}
 	
 	public void deleteGreatestDegree() {

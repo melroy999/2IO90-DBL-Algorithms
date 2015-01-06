@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Scanner;
 
@@ -15,6 +16,7 @@ import java.util.Scanner;
 public class MapLabeler {
 	private Scanner sc;
 
+
 	private File input = new File("2pos100.txt");
 	private File output = new File("2pos100_solved.txt");
 
@@ -24,11 +26,7 @@ public class MapLabeler {
 	public static final boolean local = true;
 
 	public MapLabeler() throws IOException{
-		//for(int i = 100; i <= 10000; i+=100){
-			//if (i == 300) {i+=100;}
-			//input = new File("tests/pointsamm_" + i + ".txt");
-			try{
-		
+	    try{
 			if(local){
 				sc = new Scanner(input);
 			}
@@ -37,18 +35,22 @@ public class MapLabeler {
 				sc = new Scanner(System.in);
 			}
 		} catch (FileNotFoundException e){
-			System.out.println("Input file not found: " + input.getName());;
+			System.out.println("Input file not found: " + input.getName());
 		}
-		readInput();
-		long start = System.currentTimeMillis();
-		solvePlacementProblem();
-		writeOutput();
-		long stop = System.currentTimeMillis();
-		System.out.println("Time elapsed: "+(stop-start));
-		//}
+	    try {
+			readInput();
+			long start = System.currentTimeMillis();
+			solvePlacementProblem();
+			writeOutput();
+			long stop = System.currentTimeMillis();
+			System.out.println("Time elapsed: "+(stop-start));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
-	public void readInput(){
+	public void readInput() throws Exception{
 		sc.useLocale(Locale.US);
 		sc.next();
 		sc.next();
@@ -60,35 +62,51 @@ public class MapLabeler {
 		sc.next();
 		sc.next();
 		int numberOfPoints = sc.nextInt();
-
 		if(pModel == PlacementModel.ONESLIDER){
+			HashSet<String> pointsSet = new HashSet<String>();
 			SliderPoint[] points = new SliderPoint[numberOfPoints];
 
 			for(int i=0; i<numberOfPoints; i++){
 				int x = sc.nextInt();
 				int y = sc.nextInt();
 				points[i] = new SliderPoint(x, y, ratio);
+				pointsSet.add(points[i].toString());
 			}
+
+			if(points.length != pointsSet.size()){
+				throw new Exception("Duplicate points detected");
+			}
+
 			plane = new Plane(ratio, points);
 		}
 		else{
+			HashSet<String> pointsSet = new HashSet<String>();
 			PosPoint[] points = new PosPoint[numberOfPoints];
 
 			for(int i=0; i<numberOfPoints; i++){
 				int x = sc.nextInt();
 				int y = sc.nextInt();
 				points[i] = new PosPoint(x, y);
+				pointsSet.add(points[i].toString());
 			}
+			
+			if(points.length != pointsSet.size()){
+				throw new Exception("Duplicate points detected");
+			}
+
 			plane = new Plane(ratio, points);
-		}		
+		}	
+
 	}
 
+	Label[] iets = new Label[1];
+	
 	public void solvePlacementProblem(){
 		if(pModel == PlacementModel.TWOPOS){
 			plane.find2PosSolution();
 		}
 		else if(pModel == PlacementModel.FOURPOS){
-			plane.find4PosSolution();
+			iets = plane.find4PosSolutionSA();
 		}
 		else{
 			plane.find1SliderSolution();
@@ -111,6 +129,13 @@ public class MapLabeler {
 				SliderPoint[] s = plane.getSliderPoints();
 				for(int i=0; i<s.length; i++){
 					bw.write("" + s[i].getX() + " " + s[i].getY() + " " + s[i].getS());
+					bw.newLine();
+				}
+			}
+			else if(pModel == PlacementModel.FOURPOS){
+				Label[] l = iets;
+				for(int i = 0; i < l.length; i++){
+					bw.write("" + l[i].getX() + " " + l[i].getY() + " " + l[i].getOrientation().toString());//TODO redo orientation text
 					bw.newLine();
 				}
 			}
