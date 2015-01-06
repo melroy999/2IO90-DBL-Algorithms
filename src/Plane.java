@@ -104,16 +104,22 @@ public class Plane {
 			if (collisions!=null){//collisions will return null if a point with only dead labels exists
 				clauses.addAll(getClauses(collisions));//add the clauses generated with the collisions to the clauses list.
 				if(checkTwoSatisfiability(clauses)){//if a satisfiable configuration exists
-					minHeight = height;//this height will be valid, so the minimum height becomes this height.
-					validConfiguration = new HashMap<PosPoint, Orientation>(validOrientation);
+					if(minHeight<height){
+						minHeight = height;//this height will be valid, so the minimum height becomes this height.
+						validConfiguration = new HashMap<PosPoint, Orientation>(validOrientation);
+					}
 				}
 				else{//if no solution can be found with 2-sat
-					maxHeight = height;
+					if(maxHeight > height){
+						maxHeight = height;
+					}
 					//this height has no solution, so the maximum found height for which this does not work is now height
 				}
 			}
 			else {//if a point has only dead labels
-				maxHeight = height;
+				if(maxHeight > height){
+					maxHeight = height;
+				}
 				//this height has no solution, so the maximum found height for which this does not work is now height
 			}
 
