@@ -151,14 +151,8 @@ public class MapLabeler {
 			else{
 				PosPoint[] s = plane.getPosPoints();
 				for(int i=0; i<s.length; i++){
-					try{
-						bw.write("" + s[i].getX() + " " + s[i].getY() + " " + s[i].getPosition().toString());//TODO redo orientation text
-						bw.newLine();
-					} catch(NullPointerException e){
-						System.out.println("Warning: no position set for " + s[i]);
-						bw.write("" + s[i].getX() + " " + s[i].getY() + " NE");//TODO redo orientation text
-						bw.newLine();	
-					}
+					bw.write("" + s[i].getX() + " " + s[i].getY() + " " + s[i].getPosition().toString());//TODO redo orientation text
+					bw.newLine();
 				}
 			}
 			bw.close();
