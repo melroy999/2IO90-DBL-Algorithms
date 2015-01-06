@@ -22,11 +22,11 @@ public class MapLabeler {
 	
 	
 
-	//private File input;
-	//private File output;
+	private File input;
+	private File output;
 
-	private File input = new File("2pos100.txt");
-	private File output = new File("2pos100_solved.txt");
+	//private File input = new File("2pos100.txt");
+	//private File output = new File("2pos100_solved.txt");
 
 	
 	//private File input = new File("tests/gaatfout/testert3.txt");
@@ -40,11 +40,11 @@ public class MapLabeler {
 	public static final boolean local = true;
 
 	public MapLabeler() throws IOException{
-		//for(int points = 900; points <= 1000; points += 100){
-			//System.out.print(points + " ");
-			//for(int test = 1; test <= 10; test++){
-				//input = new File("tests/4pos/test" + test + "/pointsamm_" + points + ".txt");
-				//output = new File("tests/4pos/test" + test + "/pointsamm_" + points + "_solved.txt");
+		for(int points = 400; points <= 400; points += 100){
+			System.out.print(points + " ");
+			for(int test = 9; test <= 9; test++){
+				input = new File("tests/2pos/test" + test + "/pointsamm_" + points + ".txt");
+				output = new File("tests/2pos/test" + test + "/pointsamm_" + points + "_solved.txt");
 				
 				try{
 					if(local){
@@ -70,9 +70,9 @@ public class MapLabeler {
 					e.printStackTrace();
 				}
 				
-			//}
-			//System.out.println();
-		//}
+			}
+			System.out.println();
+		}
 	    
 	}
 

@@ -94,6 +94,7 @@ public class Plane {
 		}
 
 		while(lastHeight != height){//as long as the height is not equal to the last checked height
+			debugPrint("height: " + height + ", " + lastHeight + ", " + minHeight + ", " + maxHeight);
 			HashMap<PosPoint, Orientation> validOrientation = new HashMap<PosPoint, Orientation>();
 			ArrayList<Label> labels = new ArrayList<Label>(allLabels);//all labels will be stored in this arrayList. 	
 			ArrayList<Clause> clauses = new ArrayList<Clause>();//a list which will initially contain additional clauses.
