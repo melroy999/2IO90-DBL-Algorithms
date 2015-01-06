@@ -38,14 +38,16 @@ public class MapLabeler {
 
 	private Plane plane;
 	private PlacementModel pModel;
-
+	
 	public static final boolean local = true;
+	
+	public static final long start = System.currentTimeMillis();
 
 	private ArrayList<Long> times = new ArrayList<Long>();
 	
 	
 	public MapLabeler() throws IOException{
-		for(int points = 9500; points <= 10000; points += 100){
+		for(int points = 100; points <= 10000; points += 100){
 			System.out.print(points + " ");
 			for(int test = 1; test <= 10; test++){
 				input = new File("tests/2pos/test" + test + "/pointsamm_" + points + ".txt");
@@ -64,6 +66,7 @@ public class MapLabeler {
 				}
 			    try {
 					readInput();
+
 					times.clear();
 					for(int iteration = 0; iteration < 1; iteration++){
 						long start = System.currentTimeMillis();
@@ -74,7 +77,7 @@ public class MapLabeler {
 						times.add(time);
 					}
 					System.out.print(calculateAverage(times) + " ");
-					//times.clear();
+
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -171,7 +174,7 @@ public class MapLabeler {
 			bw.newLine();
 			bw.write("number of points: " + plane.getNumberOfPoints());
 			bw.newLine();
-			bw.write("label height: " + plane.getHeight());
+			bw.write("height: " + plane.getHeight());
 			bw.newLine();
 			if(pModel == PlacementModel.ONESLIDER){
 				SliderPoint[] s = plane.getSliderPoints();
@@ -200,7 +203,7 @@ public class MapLabeler {
 			System.out.println("placement model: " + pModel.toString());
 			System.out.println("aspect ratio: " + plane.getAspectRatio());
 			System.out.println("number of points: " + plane.getNumberOfPoints());
-			System.out.println("label height: " + plane.getHeight());
+			System.out.println("height: " + plane.getHeight());
 			if(pModel == PlacementModel.ONESLIDER){
 				SliderPoint[] s = plane.getSliderPoints();
 				for(int i=0; i<s.length; i++){

@@ -35,7 +35,6 @@ public class Plane {
 	private PosPoint[] posPoints;
 
 	private double delta = 0.001;//difference of border
-
 	private boolean debug = !true;
 
 	public Plane(double aspectRatio, SliderPoint[] points){
@@ -74,7 +73,8 @@ public class Plane {
 		int range = 10000;//the range of the coordinates from 0 to range
 		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range+1,range+1));//new quadtree with (top) level 0 and dimensions (range+1)^2
 
-		double minHeight = (aspectRatio < 1) ? 0.5 : (1/(2*aspectRatio));//minimal height		
+
+		double minHeight = (aspectRatio < 1) ? 1d : (1d/(2d*aspectRatio));//minimal height	
 		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);//find the max height
 		height = maxHeight;//height to use initially is the max height.
 		double lastHeight = 0;//a value to find out if you are checking for the same height twice in succession.
@@ -94,7 +94,7 @@ public class Plane {
 		}
 
 		while(lastHeight != height){//as long as the height is not equal to the last checked height
-			debugPrint("height: " + height + ", " + lastHeight + ", " + minHeight + ", " + maxHeight);
+			debugPrint("Height: " + height + " lastHeight: " + lastHeight + " minHeight: " + minHeight + " maxHeight: " + maxHeight);
 			HashMap<PosPoint, Orientation> validOrientation = new HashMap<PosPoint, Orientation>();
 			ArrayList<Label> labels = new ArrayList<Label>(allLabels);//all labels will be stored in this arrayList. 	
 			ArrayList<Clause> clauses = new ArrayList<Clause>();//a list which will initially contain additional clauses.
@@ -106,7 +106,7 @@ public class Plane {
 			if (collisions!=null){//collisions will return null if a point with only dead labels exists
 				clauses.addAll(getClauses(collisions));//add the clauses generated with the collisions to the clauses list.
 				if(checkTwoSatisfiability(clauses)){//if a satisfiable configuration exists
-					if(minHeight<height){
+					if(minHeight <= height){
 						minHeight = height;//this height will be valid, so the minimum height becomes this height.
 						validConfiguration = new HashMap<PosPoint, Orientation>(validOrientation);
 					}
@@ -124,7 +124,8 @@ public class Plane {
 				}
 				//this height has no solution, so the maximum found height for which this does not work is now height
 			}
-
+			
+		    debugPrint("new last height: " + height);
 			lastHeight = height;//remember which height was used this iteration.
 
 			/*
@@ -135,13 +136,35 @@ public class Plane {
 			height = (maxHeight+minHeight)/2;//calculate the average of the maxHeight and minHeight
 			double width = height * aspectRatio;//calculate the width.
 
-			height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
+			debugPrint(">" + height + "," + width + ":" + roundToHalf(height) + "," + roundToHalf(width) + ":" + Math.abs(height-roundToHalf(height)) + "," + Math.abs(width-roundToHalf(width)));
+			
+			//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
+			
+			if(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))){
+				if(roundToHalf(height)<maxHeight && roundToHalf(height) > minHeight){
+					height = roundToHalf(height);
+				}
+				else{
+					height = roundToHalf(width)/aspectRatio;
+				}
+			}
+			else{
+				if(roundToHalf(width)/aspectRatio<maxHeight && roundToHalf(width)/aspectRatio > minHeight){
+					height = roundToHalf(width)/aspectRatio;
+				}
+				else{
+					height = roundToHalf(height);
+				}
+			}
 			//(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))): 
 			//	Find if the distance to next height or the next width is smaller than the other.
+			debugPrint("new height: " + height);
 		}
 
 		height = minHeight;//To be sure that we have a valid height, take the minHeight found.
 
+		debugPrint("Resulting height: " + height + ", " + maxHeight + ", " + minHeight);
+		
 		for(PosPoint p : posPoints){//check for all points if there exists a valid label placement already.
 			if(validConfiguration.containsKey(p)){
 				p.setPosition(validConfiguration.get(p));//if so, set the position to the given value.
@@ -681,12 +704,15 @@ public class Plane {
 		int i;																									//sliderPoints must be sorted on x-coordinates
 		double minH = 0;
 		double maxH = MaxSize.getMaxPossibleHeight(sArray, pointer, aspectRatio, PlacementModel.ONESLIDER);
-		double T = 0.008;
-		delta= maxH/(Math.pow(2,(1000/(sArray.length * T))));
-		System.out.println("Precision: " + delta);
-		System.out.println("MaxSize gives: " + maxH);
+		double T = 0.01;
+		delta= 0.000000000000001; //maxH/(Math.pow(2,(1000/(sArray.length * T))));
+		//System.out.println("Precision: " + delta);
+		//System.out.println("MaxSize gives: " + maxH);
 		double currentH;
-		while (maxH-minH >= delta) {
+		double saveD = 0;
+		while ((maxH-minH >= delta) && (System.currentTimeMillis() - MapLabeler.start <= 10000) && (saveD != maxH-minH) ) {
+			saveD = maxH - minH;
+			System.out.println(saveD);
 			boolean mayContinue = true;
 			currentH = (maxH + minH)/2;
 			debugPrint("Current: " + currentH);
@@ -731,7 +757,7 @@ public class Plane {
 			if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
 				if ( checkNewSituation(sliderPoints, xPointArray, i) == false ) {				//check if the new situation would work																//current becomes up
 					i = -1;																		
-					System.out.println("WOOPS DIT ZAG IK NIET AANKOMEN");						//NIET GOED HELEMAAL NIET GOED
+					System.out.println("WOOPS1");						//NIET GOED HELEMAAL NIET GOED
 				}
 			}
 		}
@@ -743,8 +769,17 @@ public class Plane {
 		//height = Math.floor(minH*1000000000)*1000000000;
 		//height = minH;
 		BigDecimal lel = new BigDecimal(minH);
-		lel = lel.setScale(10, RoundingMode.FLOOR);
+		lel = lel.setScale(15, RoundingMode.FLOOR);
 		height = lel.doubleValue();
+		for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].setNEWsize(height);}
+		for (i = sliderPoints.length -1; i >= 0; i--) {											//for every point, from right to left
+			if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
+				if ( checkNewSituation(sliderPoints, xPointArray, i) == false ) {				//check if the new situation would work																//current becomes up
+					i = -1;																		
+					System.out.println("WOOPS2");						//NIET GOED HELEMAAL NIET GOED
+				}
+			}
+		}
 	}
 
 	boolean checkNewSituation(SliderPoint[] sArray, int[] pointer, int pointLoc) {
