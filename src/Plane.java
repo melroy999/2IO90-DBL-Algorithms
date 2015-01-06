@@ -26,8 +26,6 @@ public class Plane {
 
 	private HashMap<ClauseValue, Integer> connectedComponents;//saves the connected component number the clauseValue is part of.
 	private DirectedGraph minGraph;//saves the graph of the iteration with a solvable situation.
-	private HashMap<PosPoint, Orientation> validConfiguration = new HashMap<PosPoint, Orientation>();//stores the already chosen labels in a solvable situation.
-
 	private Map<ClauseValue, PosPoint> clauseToPoint;//easily find the point connected to a clauseValue.
 
 	private SliderPoint[] sliderPoints;
@@ -35,7 +33,7 @@ public class Plane {
 	private PosPoint[] posPoints;
 
 	private double delta = 0.001;//difference of border
-	private boolean debug = !true;
+	private boolean debug = true;
 
 	public Plane(double aspectRatio, SliderPoint[] points){
 		this.aspectRatio = aspectRatio;
@@ -108,7 +106,6 @@ public class Plane {
 				if(checkTwoSatisfiability(clauses)){//if a satisfiable configuration exists
 					if(minHeight <= height){
 						minHeight = height;//this height will be valid, so the minimum height becomes this height.
-						validConfiguration = new HashMap<PosPoint, Orientation>(validOrientation);
 					}
 				}
 				else{//if no solution can be found with 2-sat
@@ -141,7 +138,7 @@ public class Plane {
 			//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
 			
 			if(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))){
-				if(roundToHalf(height)<maxHeight && roundToHalf(height) > minHeight){
+				if(roundToHalf(height)<=maxHeight && roundToHalf(height) >= minHeight){
 					height = roundToHalf(height);
 				}
 				else{
@@ -149,7 +146,7 @@ public class Plane {
 				}
 			}
 			else{
-				if(roundToHalf(width)/aspectRatio<maxHeight && roundToHalf(width)/aspectRatio > minHeight){
+				if(roundToHalf(width)/aspectRatio<=maxHeight && roundToHalf(width)/aspectRatio >= minHeight){
 					height = roundToHalf(width)/aspectRatio;
 				}
 				else{
@@ -164,12 +161,6 @@ public class Plane {
 		height = minHeight;//To be sure that we have a valid height, take the minHeight found.
 
 		debugPrint("Resulting height: " + height + ", " + maxHeight + ", " + minHeight);
-		
-		for(PosPoint p : posPoints){//check for all points if there exists a valid label placement already.
-			if(validConfiguration.containsKey(p)){
-				p.setPosition(validConfiguration.get(p));//if so, set the position to the given value.
-			}
-		}
 
 		Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));//the depth first search order or the reverse of the graph.
 
