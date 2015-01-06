@@ -231,7 +231,7 @@ public class Plane {
 			int neighbourEnergy;
 			
 			simulatedAnnealing:
-			for(int iteration = 0; iteration < 5; iteration++){
+			for(int iteration = 0; iteration < 1; iteration++){
 				double temp = initialTemp;
 				debugPrint("Iteration: " + iteration);
 			
