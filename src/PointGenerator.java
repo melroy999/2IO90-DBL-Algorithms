@@ -18,21 +18,23 @@ public class PointGenerator {
 
     private int startOctave = 3;
 
-    private int test = 10;
+    private int test = 5;
 
     public static void main(String[] args){
         new PointGenerator().handler();
     }
 
     public void handler(){
-    	r = new Random(test);
-		//for(int id = 100; id <= 10000; id += 100){
+    	//for(int test = 1; test <= 20; test++){
+    		r = new Random(test);
+        	
+		for(int id = 100; id <= 10000; id += 100){
 		//int id = 100000;
-			output = new File("tests/gaatfout/10_4pos_notdense.txt");
-			placementModel = "4pos";
+			output = new File("tests/2pos/test" + test + "/pointsamm_" + id + ".txt");
+			placementModel = "2pos";
 			ratio = r.nextFloat() * 3;
-			density = 0.001;
-			int pointsAmount = 10;
+			density = r.nextDouble()/100;
+			int pointsAmount = id;
 			int width = 100;
 			int height = 100;
 			
@@ -70,8 +72,10 @@ public class PointGenerator {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		//}
+		}
+		
 		System.out.println("Done");
+    	//}
 
     }
 

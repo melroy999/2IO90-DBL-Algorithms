@@ -17,12 +17,12 @@ public class MapLabeler {
 	private Scanner sc;
 
 
-	//private File input = new File("tests/pointsamm_100_4pos_notdense2.txt");
-	//private File output = new File("tests/pointsamm_100_4pos_notdense2_solved.txt");
+	private File input = new File("tests/pointsamm_100_4pos_notdense2.txt");
+	private File output = new File("tests/pointsamm_100_4pos_notdense2_solved.txt");
 	
 	
-	private File input = new File("tests/gaatfout/ters.txt");
-	private File output = new File("tests/gaatfout/ters_solved.txt");
+	//private File input;
+	//private File output;
 	
 	//private File input = new File("tests/gaatfout/testert3.txt");
 	//private File output = new File("tests/gaatfout/testert3_solved.txt");
@@ -35,28 +35,40 @@ public class MapLabeler {
 	public static final boolean local = true;
 
 	public MapLabeler() throws IOException{
-	    try{
-			if(local){
-				sc = new Scanner(input);
+		//for(int points = 900; points <= 1000; points += 100){
+			//System.out.print(points + " ");
+			//for(int test = 1; test <= 10; test++){
+				//input = new File("tests/4pos/test" + test + "/pointsamm_" + points + ".txt");
+				//output = new File("tests/4pos/test" + test + "/pointsamm_" + points + "_solved.txt");
+				
+				try{
+					if(local){
+						sc = new Scanner(input);
+					}
+					else{
+					    System.out.println("Gib input pl0x");
+						sc = new Scanner(System.in);
+					}
+				} catch (FileNotFoundException e){
+					System.out.println("Input file not found: " + input.getName());
+				}
+			    try {
+					readInput();
+					long start = System.currentTimeMillis();
+					solvePlacementProblem();
+					writeOutput();
+					long stop = System.currentTimeMillis();
+					long time = (stop - start);
+					System.out.print(time + " ");
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 			}
-			else{
-			    System.out.println("Gib input pl0x");
-				sc = new Scanner(System.in);
-			}
-		} catch (FileNotFoundException e){
-			System.out.println("Input file not found: " + input.getName());
+			System.out.println();
 		}
-	    try {
-			readInput();
-			long start = System.currentTimeMillis();
-			solvePlacementProblem();
-			writeOutput();
-			long stop = System.currentTimeMillis();
-			System.out.println("Time elapsed: "+(stop-start));
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	    
 	}
 
 	public void readInput() throws Exception{
