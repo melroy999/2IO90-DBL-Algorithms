@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Scanner;
 
@@ -27,6 +28,7 @@ public class MapLabeler {
 	//private File output = new File("tests/gaatfout/testert3_solved.txt");
 	
 	
+
 	private Plane plane;
 	private PlacementModel pModel;
 
@@ -44,15 +46,20 @@ public class MapLabeler {
 		} catch (FileNotFoundException e){
 			System.out.println("Input file not found: " + input.getName());
 		}
-		readInput();
-	    long start = System.currentTimeMillis();
-		solvePlacementProblem();
-		writeOutput();
-		long stop = System.currentTimeMillis();
-		System.out.println("Time elapsed: "+(stop-start));
+	    try {
+			readInput();
+			long start = System.currentTimeMillis();
+			solvePlacementProblem();
+			writeOutput();
+			long stop = System.currentTimeMillis();
+			System.out.println("Time elapsed: "+(stop-start));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
-	public void readInput(){
+	public void readInput() throws Exception{
 		sc.useLocale(Locale.US);
 		sc.next();
 		sc.next();
@@ -65,26 +72,40 @@ public class MapLabeler {
 		sc.next();
 		int numberOfPoints = sc.nextInt();
 		if(pModel == PlacementModel.ONESLIDER){
+			HashSet<String> pointsSet = new HashSet<String>();
 			SliderPoint[] points = new SliderPoint[numberOfPoints];
 
 			for(int i=0; i<numberOfPoints; i++){
 				int x = sc.nextInt();
 				int y = sc.nextInt();
 				points[i] = new SliderPoint(x, y, ratio);
+				pointsSet.add(points[i].toString());
 			}
+
+			if(points.length != pointsSet.size()){
+				throw new Exception("Duplicate points detected");
+			}
+
 			plane = new Plane(ratio, points);
 		}
 		else{
+			HashSet<String> pointsSet = new HashSet<String>();
 			PosPoint[] points = new PosPoint[numberOfPoints];
 
 			for(int i=0; i<numberOfPoints; i++){
 				int x = sc.nextInt();
 				int y = sc.nextInt();
 				points[i] = new PosPoint(x, y);
+				pointsSet.add(points[i].toString());
 			}
+			
+			if(points.length != pointsSet.size()){
+				throw new Exception("Duplicate points detected");
+			}
+
 			plane = new Plane(ratio, points);
 		}	
-		
+
 	}
 
 	Label[] iets = new Label[1];
