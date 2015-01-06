@@ -1,3 +1,6 @@
+
+import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.Random;
 
 
@@ -5,11 +8,26 @@ public class LabelConfiguration {
 	private Label[] labels;
 	private Random r = new Random();
 	
-	public LabelConfiguration(PosPoint[] p){
+	private int lastChangePos;
+	private Orientation lastChangeFrom;
+	private Orientation lastChangeTo;
+	
+	public LabelConfiguration(PosPoint[] p, double height, double ratio){
 		
-		labels = new Label[p.length];
+		this.labels = new Label[p.length];
 		for (int i = 0; i < p.length; i++) {
-            labels[i] = new Label(p[i],r.nextBoolean() ? 1 : 0,r.nextBoolean());
+            this.labels[i] = new Label(p[i],r.nextBoolean() ? 1 : 0,r.nextBoolean());
+            
+            Label l = labels[i];
+    		double top = l.getBoundPoint().getY() + (l.isTop() ? height : 0);
+            double bottom = top - height;
+            double right = l.getBoundPoint().getX() + (height * ratio * l.getShift());
+            double left = right - (height * ratio);
+            
+            Rectangle2D rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+            l.setRect(rect);
+            
+            
         }
 	}
 	
@@ -29,12 +47,39 @@ public class LabelConfiguration {
 		return labels.length;
 	}
 	
-	public void change(int position){
+	public void changeBack(Orientation o){
+		//TODO iets met de verandering hier gaat fout
+		Label l = labels[lastChangePos];
+		//System.out.print("     Changed back: " + l + " TO " + o + " (becomes ");
+		
+		l.setOrientation(o);
+		//System.out.print(l + ")");
+		//System.out.println();
+	}
+	
+	public int getLastPos(){
+		return lastChangePos;
+	}
+	
+	public Orientation getLastFrom(){
+		return lastChangeFrom;
+	}
+	
+	public Orientation getLastTo(){
+		return lastChangeTo;
+	}
+	
+	
+	public void change(int position, ArrayList<Orientation> options){
 		Label l = labels[position];
-		Orientation[] options = new Orientation[3];
+		
+		
 		Orientation o = l.getOrientation();
+		options.remove(o);
+		
+		
 		//System.out.print("set " + l.getX() + " " + l.getY() + " from " + o);
-		if(o == Orientation.NE){
+		/*if(o == Orientation.NE){
 			options[0] = Orientation.NW;
 			options[1] = Orientation.SE;
 			options[2] = Orientation.SW;
@@ -53,11 +98,27 @@ public class LabelConfiguration {
 			options[0] = Orientation.NE;
 			options[1] = Orientation.NW;
 			options[2] = Orientation.SE;
-		}
-		Orientation to = options[(int)(r.nextInt(3))];
+		}*/
+		
+		
+		
+		Orientation to = options.get((int)(r.nextInt(options.size())));
+		options.remove(to);
 		//System.out.print(" to " + to);
 		//System.out.println();
+		
+		//System.out.print("     Changed TO: " + l + " from " + o + " to " + to + " becomes ");
+		
+		
 		l.setOrientation(to);
+		
+		//System.out.print(l);
+		//System.out.println();
+		
+		lastChangePos = position;
+		lastChangeFrom = o;
+		lastChangeTo = to;
+		
 		//r.nextDouble() * 
 	}
 	
