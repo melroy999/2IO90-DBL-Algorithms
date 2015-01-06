@@ -26,7 +26,7 @@ public class Plane {
 
 	private HashMap<ClauseValue, Integer> connectedComponents;//saves the connected component number the clauseValue is part of.
 	private DirectedGraph minGraph;//saves the graph of the iteration with a solvable situation.
-	private HashMap<PosPoint, Orientation> validConfiguration;//stores the already chosen labels in a solvable situation.
+	private HashMap<PosPoint, Orientation> validConfiguration = new HashMap<PosPoint, Orientation>();//stores the already chosen labels in a solvable situation.
 
 	private Map<ClauseValue, PosPoint> clauseToPoint;//easily find the point connected to a clauseValue.
 
@@ -74,7 +74,7 @@ public class Plane {
 		int range = 10000;//the range of the coordinates from 0 to range
 		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range+1,range+1));//new quadtree with (top) level 0 and dimensions (range+1)^2
 
-		double minHeight = (aspectRatio < 1) ? 1 : (1/aspectRatio);//minimal height		
+		double minHeight = (aspectRatio < 1) ? 0.5 : (1/(2*aspectRatio));//minimal height		
 		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);//find the max height
 		height = maxHeight;//height to use initially is the max height.
 		double lastHeight = 0;//a value to find out if you are checking for the same height twice in succession.
