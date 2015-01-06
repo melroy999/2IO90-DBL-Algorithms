@@ -17,12 +17,17 @@ public class MapLabeler {
 	private Scanner sc;
 
 
-	private File input = new File("tests/pointsamm_100_4pos_notdense2.txt");
-	private File output = new File("tests/pointsamm_100_4pos_notdense2_solved.txt");
+	//private File input = new File("tests/pointsamm_100_4pos_notdense2.txt");
+	//private File output = new File("tests/pointsamm_100_4pos_notdense2_solved.txt");
 	
 	
+
 	//private File input;
 	//private File output;
+
+	private File input = new File("2pos100.txt");
+	private File output = new File("2pos100_solved.txt");
+
 	
 	//private File input = new File("tests/gaatfout/testert3.txt");
 	//private File output = new File("tests/gaatfout/testert3_solved.txt");
@@ -65,9 +70,9 @@ public class MapLabeler {
 					e.printStackTrace();
 				}
 				
-			}
-			System.out.println();
-		}
+			//}
+			//System.out.println();
+		//}
 	    
 	}
 
