@@ -21,8 +21,8 @@ public class MapLabeler {
 	//private File output = new File("tests/pointsamm_100_4pos_notdense2_solved.txt");
 	
 	
-	private File input = new File("tests/gaatfout/ters.txt");
-	private File output = new File("tests/gaatfout/ters_solved.txt");
+	private File input = new File("2pos100.txt");
+	private File output = new File("2pos100_solved.txt");
 	
 	//private File input = new File("tests/gaatfout/testert3.txt");
 	//private File output = new File("tests/gaatfout/testert3_solved.txt");
@@ -151,8 +151,14 @@ public class MapLabeler {
 			else{
 				PosPoint[] s = plane.getPosPoints();
 				for(int i=0; i<s.length; i++){
-					bw.write("" + s[i].getX() + " " + s[i].getY() + " " + s[i].getPosition().toString());//TODO redo orientation text
-					bw.newLine();
+					try{
+						bw.write("" + s[i].getX() + " " + s[i].getY() + " " + s[i].getPosition().toString());//TODO redo orientation text
+						bw.newLine();
+					} catch(NullPointerException e){
+						System.out.println("Warning: no position set for " + s[i]);
+						bw.write("" + s[i].getX() + " " + s[i].getY() + " NE");//TODO redo orientation text
+						bw.newLine();	
+					}
 				}
 			}
 			bw.close();
