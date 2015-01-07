@@ -104,11 +104,13 @@ public class Plane {
 				if(checkTwoSatisfiability(clauses)){//if a satisfiable configuration exists
 					if(minHeight <= height){
 						minHeight = height;//this height will be valid, so the minimum height becomes this height.
+						debugPrint("2-Sat satisfies.");
 					}
 				}
 				else{//if no solution can be found with 2-sat
 					if(maxHeight > height){
 						maxHeight = height;
+						debugPrint("2-Sat is not satisfactory.");
 					}
 					//this height has no solution, so the maximum found height for which this does not work is now height
 				}
@@ -116,6 +118,7 @@ public class Plane {
 			else {//if a point has only dead labels
 				if(maxHeight > height){
 					maxHeight = height;
+					debugPrint("A label is dead.");
 				}
 				//this height has no solution, so the maximum found height for which this does not work is now height
 			}
@@ -159,12 +162,14 @@ public class Plane {
 		height = minHeight;//To be sure that we have a valid height, take the minHeight found.
 
 		debugPrint("Resulting height: " + height + ", " + maxHeight + ", " + minHeight);
-
-		Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));//the depth first search order or the reverse of the graph.
-
-		while(!order.isEmpty()){//while elements in the order stack still exist.
-			ClauseValue next = order.pop();//pop the first element.
-			getNext(next);//check which elements this one is connected to.
+		
+		if(minGraph!=null){
+			Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));//the depth first search order or the reverse of the graph.
+		
+			while(!order.isEmpty()){//while elements in the order stack still exist.
+				ClauseValue next = order.pop();//pop the first element.
+				getNext(next);//check which elements this one is connected to.
+			}
 		}
 		
 		for(PosPoint p : posPoints){
@@ -172,6 +177,7 @@ public class Plane {
 				p.setPosition(Orientation.NE);
 			}
 		}
+		
 
 		if(debug){
 			testValidity2Pos(posPoints);
