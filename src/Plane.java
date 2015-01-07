@@ -54,11 +54,6 @@ public class Plane {
 		}
 	}
 
-	public void addLabel(Label label, ArrayList<Label> labels){
-		label.getBoundPoint().addLabel(label);
-		labels.add(label);
-	}
-
 	/**
 	 * 
 	 * @return The solution to the 2pos problem. It first calculates the maximum height
@@ -72,7 +67,10 @@ public class Plane {
 		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range+1,range+1));//new quadtree with (top) level 0 and dimensions (range+1)^2
 
 
-		double minHeight = (aspectRatio < 1) ? 1d : (1d/(2d*aspectRatio));//minimal height	
+		double minHeight = (aspectRatio <= 1) ? 1d : (1d/(2d*aspectRatio));//minimal height
+		//TODO is it really true that 2*aspectRatio for 2Pos solution? can't all labels be put in the same orientation,
+		//TODO and still not cause overlap? all points have at least 1x1 free space, no matter the location, as long as all 
+		//TODO labels are orientated the same way, which is the simplest and minimal solution.
 		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);//find the max height
 		height = maxHeight;//height to use initially is the max height.
 		double lastHeight = 0;//a value to find out if you are checking for the same height twice in succession.
@@ -83,11 +81,11 @@ public class Plane {
 
 		for(PosPoint p :posPoints){//make the top labels for all points.
 			Label NE = new Label(p, 1, true);
-			addLabel(NE, allLabels);//shift=1 and top=true gives us the NE label;
+			allLabels.add(NE);//shift=1 and top=true gives us the NE label;
 			clauseToPoint.put((NE).toClause(), p);
 
 			Label NW = new Label(p, 0, true);
-			addLabel(NW, allLabels);//shift=0 and top=true gives us the NW label;
+			allLabels.add(NW);//shift=1 and top=true gives us the NE label;
 			clauseToPoint.put((NW).toClause(), p);
 		}
 
@@ -175,7 +173,47 @@ public class Plane {
 			}
 		}
 
+		if(debug){
+			testValidity2Pos(posPoints);
+		}
+		
 		return posPoints;//return the array of points, now with correct positions.
+	}
+	
+	public void testValidity2Pos(PosPoint[] points){
+		Label[] labels = new Label[points.length];
+		boolean clean = true;
+		
+		for(int i = 0 ; i < points.length ; i++){
+			if(points[i].getPosition().equals(Orientation.NW)){
+				labels[i] = new Label(points[i],0,true);
+			}
+			else{
+				labels[i] = new Label(points[i],1,true);
+			}
+			
+			double top = labels[i].getBoundPoint().getY() + (labels[i].isTop() ? height : 0);
+	        double bottom = top - height;
+	        double right = labels[i].getBoundPoint().getX() + (height * aspectRatio * labels[i].getShift());
+	        double left = right - (height * aspectRatio);
+	            
+	        Rectangle2D rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+	        labels[i].setRect(rect);
+		}
+		
+		
+		for(int i = 0 ; i < points.length ; i++){
+			for(int j = 0 ; j < points.length ; j++){
+				if(i!=j){
+					if(labels[i].getRect().intersects(labels[j].getRect())){
+						System.out.println(points[i].toString() + " intersects with " + points[j].toString());
+						clean = false;
+					}
+				}
+			}
+		}
+		
+		System.out.println("collisions found: " + !clean);
 	}
 
 	public double roundToHalf(double d){
