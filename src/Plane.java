@@ -680,7 +680,7 @@ public class Plane {
 		double minH = 0;
 		double maxH = MaxSize.getMaxPossibleHeight(sArray, pointer, aspectRatio, PlacementModel.ONESLIDER);
 		double T = 0.01;
-		delta= 0.000000000000001; //maxH/(Math.pow(2,(1000/(sArray.length * T))));
+		delta= 0.00000000000001; //maxH/(Math.pow(2,(1000/(sArray.length * T))));
 		//System.out.println("Precision: " + delta);
 		//System.out.println("MaxSize gives: " + maxH);
 		double currentH;
@@ -744,7 +744,7 @@ public class Plane {
 		//height = Math.floor(minH*1000000000)*1000000000;
 		//height = minH;
 		BigDecimal lel = new BigDecimal(minH);
-		lel = lel.setScale(15, RoundingMode.FLOOR);
+		lel = lel.setScale(14, RoundingMode.FLOOR);
 		height = lel.doubleValue();
 		for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].setNEWsize(height);}
 		for (i = sliderPoints.length -1; i >= 0; i--) {											//for every point, from right to left
