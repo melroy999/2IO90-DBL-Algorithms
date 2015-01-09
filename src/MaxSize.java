@@ -2,6 +2,7 @@ public class MaxSize {
 
     // Finds the maximal possible height for a set of points such that there might be a solution.
     public static double getMaxPossibleHeight(Point[] points, int[] pointers, double ratio, PlacementModel pModel){
+    	long time = System.nanoTime();
         double minimum = Double.MAX_VALUE;
         //Find the maximal height of a point and check if it is smaller than the current max.
         for(int i=0; i<pointers.length; i++){
@@ -30,6 +31,7 @@ public class MaxSize {
             }
             minimum = (localMax < minimum) ? localMax : minimum;
         }
+        MapLabeler.maxHeightTime += (System.nanoTime()-time);
         return minimum;
     }
     

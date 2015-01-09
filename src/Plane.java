@@ -31,21 +31,24 @@ public class Plane {
 	private SliderPoint[] sliderPoints;
 	public int[] xPointArray;  //slider pointers
 	private PosPoint[] posPoints;
-
+	private PlacementModel pModel;
+	
 	private double delta = 0.001;//difference of border
-	private boolean debug = true;
-
-	public Plane(double aspectRatio, SliderPoint[] points){
+	private boolean debug = false;
+	
+	public Plane(double aspectRatio, SliderPoint[] points, PlacementModel pModel){
 		this.aspectRatio = aspectRatio;
 		this.numberOfPoints = points.length;
 		this.sliderPoints = points;
+		this.pModel = pModel;
 		height = (aspectRatio < 1 ? aspectRatio : 1/aspectRatio);
 	}
 
-	public Plane(double aspectRatio, PosPoint[] points){
+	public Plane(double aspectRatio, PosPoint[] points, PlacementModel pModel){
 		this.aspectRatio = aspectRatio;
 		this.numberOfPoints = points.length;
 		this.posPoints = points;
+		this.pModel = pModel;
 	}
 
 	public void debugPrint(String text){
@@ -72,6 +75,9 @@ public class Plane {
 		//TODO and still not cause overlap? all points have at least 1x1 free space, no matter the location, as long as all 
 		//TODO labels are orientated the same way, which is the simplest and minimal solution.
 		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);//find the max height
+		
+		MapLabeler.maxHeight = (float)maxHeight;
+		
 		height = maxHeight;//height to use initially is the max height.
 		double lastHeight = 0;//a value to find out if you are checking for the same height twice in succession.
 
@@ -89,6 +95,10 @@ public class Plane {
 			clauseToPoint.put((NW).toClause(), p);
 		}
 
+		int loops = 0;
+		
+		MapLabeler.initTime += (System.nanoTime() - MapLabeler.startTime);
+		
 		while(lastHeight != height){//as long as the height is not equal to the last checked height
 			debugPrint("Height: " + height + " lastHeight: " + lastHeight + " minHeight: " + minHeight + " maxHeight: " + maxHeight);
 			HashMap<PosPoint, Orientation> validOrientation = new HashMap<PosPoint, Orientation>();
@@ -96,9 +106,17 @@ public class Plane {
 			ArrayList<Clause> clauses = new ArrayList<Clause>();//a list which will initially contain additional clauses.
 
 			//the additional clauses are required to fix the value of a dead label to the negation of the clauseValue of that label.
+			long time = System.nanoTime();
 			HashMap<Label, ArrayList<Label>> collisions = findCollisions2pos(labels, clauses, validOrientation, quad, height);
+			
+			long collisionTime = (System.nanoTime()-time);
+			MapLabeler.avgColTimeLoop += collisionTime;
+			if(MapLabeler.maxColTimeLoop < collisionTime){
+				MapLabeler.maxColTimeLoop = collisionTime;
+			}
 			//get the list of collisions	
 
+			time = System.nanoTime();
 			if (collisions!=null){//collisions will return null if a point with only dead labels exists
 				clauses.addAll(getClauses(collisions));//add the clauses generated with the collisions to the clauses list.
 				if(checkTwoSatisfiability(clauses)){//if a satisfiable configuration exists
@@ -121,6 +139,12 @@ public class Plane {
 					debugPrint("A label is dead.");
 				}
 				//this height has no solution, so the maximum found height for which this does not work is now height
+			}
+			
+			long satTime = (System.nanoTime()-time);
+			MapLabeler.avg2SatTimeLoop += satTime;
+			if(MapLabeler.max2SatTimeLoop < satTime){
+				MapLabeler.max2SatTimeLoop = satTime;
 			}
 			
 		    debugPrint("new last height: " + height);
@@ -157,13 +181,29 @@ public class Plane {
 			//(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))): 
 			//	Find if the distance to next height or the next width is smaller than the other.
 			debugPrint("new height: " + height);
+			loops++;
 		}
 
+		MapLabeler.totalAvgColTime += MapLabeler.avgColTimeLoop;
+		if(MapLabeler.totalMaxColTime < MapLabeler.avgColTimeLoop){
+			MapLabeler.totalMaxColTime = MapLabeler.avgColTimeLoop;
+		}
+		MapLabeler.avgColTimeLoop /= loops;
+		
+		MapLabeler.totalAvg2SatTime += MapLabeler.avg2SatTimeLoop;
+		if(MapLabeler.totalMax2SatTime < MapLabeler.avg2SatTimeLoop){
+			MapLabeler.totalMax2SatTime = MapLabeler.avg2SatTimeLoop;
+		}
+		MapLabeler.avg2SatTimeLoop /= loops;
+		
+		MapLabeler.nrOfLoops += loops;
+		
 		height = minHeight;//To be sure that we have a valid height, take the minHeight found.
 
 		debugPrint("Resulting height: " + height + ", " + maxHeight + ", " + minHeight);
 		
-		if(minGraph!=null){
+		long time = System.nanoTime();
+		if(minGraph!=null){//border case: solution is minimal height
 			Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));//the depth first search order or the reverse of the graph.
 		
 			while(!order.isEmpty()){//while elements in the order stack still exist.
@@ -177,49 +217,11 @@ public class Plane {
 				p.setPosition(Orientation.NE);
 			}
 		}
+		MapLabeler.placementTime += (System.nanoTime()-time);
 		
-
-		if(debug){
-			testValidity2Pos(posPoints);
-		}
+		MapLabeler.realHeight = (float)height;
 		
 		return posPoints;//return the array of points, now with correct positions.
-	}
-	
-	public void testValidity2Pos(PosPoint[] points){
-		Label[] labels = new Label[points.length];
-		boolean clean = true;
-		
-		for(int i = 0 ; i < points.length ; i++){
-			if(points[i].getPosition().equals(Orientation.NW)){
-				labels[i] = new Label(points[i],0,true);
-			}
-			else{
-				labels[i] = new Label(points[i],1,true);
-			}
-			
-			double top = labels[i].getBoundPoint().getY() + (labels[i].isTop() ? height : 0);
-	        double bottom = top - height;
-	        double right = labels[i].getBoundPoint().getX() + (height * aspectRatio * labels[i].getShift());
-	        double left = right - (height * aspectRatio);
-	            
-	        Rectangle2D rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
-	        labels[i].setRect(rect);
-		}
-		
-		
-		for(int i = 0 ; i < points.length ; i++){
-			for(int j = 0 ; j < points.length ; j++){
-				if(i!=j){
-					if(labels[i].getRect().intersects(labels[j].getRect())){
-						System.out.println(points[i].toString() + " intersects with " + points[j].toString());
-						clean = false;
-					}
-				}
-			}
-		}
-		
-		System.out.println("collisions found: " + !clean);
 	}
 
 	public double roundToHalf(double d){
@@ -1315,5 +1317,92 @@ public class Plane {
 				markReachableNodes(endpoint, graph, result, scc);//recursively mark the reachable nodes
 			}
 		}
+	}
+
+	public void checkFinalSolution() throws Exception{
+		labels = new Label[numberOfPoints];
+		if(pModel == PlacementModel.ONESLIDER){
+			for(int i=0; i<labels.length; i++){
+				SliderPoint s = sliderPoints[i];
+				PosPoint p = new PosPoint(s.getX(), s.getY());
+				Label l = new Label(p, (float)s.getS(), true);
+				labels[i] = l;
+			}
+		}
+		else{
+			for(int i=0; i<labels.length; i++){
+				PosPoint p = posPoints[i];
+				Orientation o = p.getPosition();
+				boolean top = true;
+				float shift = 0.0f;
+				
+				if(o == Orientation.NE){
+					top = true;
+					shift = 1.0f;
+				}
+				else if(o == Orientation.NW){
+					top = true;
+					shift = 0.0f;
+				}
+				else if(o == Orientation.SE){
+					top = false;
+					shift = 1.0f;
+				}
+				else if(o == Orientation.SW) {
+					top = false;
+					shift = 0.0f;
+				}
+				
+				Label l = new Label(p, shift, top);
+				labels[i] = l;
+			}
+		}
+		if(finalIntersectionTest()>0){
+			throw new Exception("Intersections detected in final output.");
+		}
+	}
+	
+	public int finalIntersectionTest(){
+		//boolean print = true;
+		//print = false;
+		
+		int range = 10000;
+		int amount = 0;
+		Label[] otherLabels = new Label[labels.length];		
+
+		for(int i = 0; i < labels.length; i++){
+			otherLabels[i] = new Label(labels[i]);
+			otherLabels[i].setHasIntersect(false);
+		}
+		
+		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range,range));
+		quad.init(otherLabels, height, aspectRatio, 10000);//initialize the quadtree
+		
+		
+		ArrayList<Label> intersecting = new ArrayList<Label>();
+		
+		
+		for(int i = 0; i < otherLabels.length; i++){
+			Label l = otherLabels[i];
+			
+			if(!intersecting.contains(l)){
+				ArrayList<Label> returnObjects = new ArrayList<Label>();
+				quad.retrieve(returnObjects, l);
+				for(int j = 0; j < returnObjects.size(); j++){
+					Label label2 = returnObjects.get(j);
+					if(intersects(l, label2)){
+						if(!intersecting.contains(l)){
+							intersecting.add(l);
+							amount++;
+						}
+						if(!intersecting.contains(label2)){
+							intersecting.add(label2);
+							amount++;
+						}
+					}	
+				}	
+			}
+		}
+		return amount;
 	}
 }

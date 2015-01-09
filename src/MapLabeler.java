@@ -17,89 +17,157 @@ import java.util.Scanner;
  */
 public class MapLabeler {
 	private Scanner sc;
-
-
-	//private File input = new File("tests/pointsamm_100_4pos_notdense2.txt");
-	//private File output = new File("tests/pointsamm_100_4pos_notdense2_solved.txt");
-	
-	
-
-	/*private File input;
-	private File output;*/
-
 	private File input = new File("2pos100.txt");
 	private File output = new File("2pos100_solved.txt");
 
-	
-	//private File input = new File("tests/gaatfout/testert3.txt");
-	//private File output = new File("tests/gaatfout/testert3_solved.txt");
-	
-	
-
 	private Plane plane;
 	private PlacementModel pModel;
-	
+
 	public static final boolean local = true;
-	
+
 	public static final long start = System.currentTimeMillis();
+	
+	public static float maxHeight = 0;//
+	public static float realHeight = 0;//
+	public static long maxHeightTime = 0;//
+	public static long initTime = 0;//
+	public static long avgColTime = 0;//
+	public static long maxColTime = 0;//
+	public static long avg2SatTime = 0;//
+	public static long max2SatTime = 0;//
+	public static long totalAvgColTime = 0;//
+	public static long totalMaxColTime = 0;//
+	public static long totalAvg2SatTime = 0;//
+	public static long totalMax2SatTime = 0;//
+	public static int nrOfLoops = 0;//
+	public static long placementTime = 0;//
+	public static long finalCheckTime = 0;
+	public static long totalRunningTime = 0;//
+	
+	public static long avgColTimeLoop = 0;//
+	public static long avg2SatTimeLoop = 0;//
+	public static long maxColTimeLoop = 0;//
+	public static long max2SatTimeLoop = 0;//
+	
+	public static long startTime = 0;
 
-	private ArrayList<Long> times = new ArrayList<Long>();
-	
-	
 	public MapLabeler() throws IOException{
-		/*for(int points = 100; points <= 10000; points += 100){
-			System.out.print(points + " ");
-			for(int test = 1; test <= 10; test++){*/
-				/*input = new File("tests/2pos/test" + test + "/pointsamm_" + points + ".txt");
-				output = new File("tests/2pos/test" + test + "/pointsamm_" + points + "_solved.txt");*/
-				
-				try{
-					if(local){
-						sc = new Scanner(input);
+		File outputFile = new File("tests/2pos/testResult_maxHeight.csv");
+		outputFile.createNewFile();
+		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+		String s ="test_nr; max_height; real_height; max_height_time; init_time; average_collision_time; max_collision_time; total_average_collision_time; total_max_collision_time; "
+				+ "average_2sat_time; max_2sat_time; total_average_2sat_time; total_max_2sat_time; nr_of_loops; placement_time; final_check_time; total_running_time";
+		writer.write(s);
+		writer.newLine();
+		for(int points = 10000; points <= 10000; points += 100){
+			for(int test = 1; test <= 10; test++){
+				maxHeight = 0;
+				realHeight = 0;
+				maxHeightTime = 0;
+				initTime = 0;
+				avgColTime = 0;
+				maxColTime = 0;
+				avg2SatTime = 0;
+				max2SatTime = 0;
+				nrOfLoops = 0;
+				placementTime = 0;
+				finalCheckTime = 0;
+				totalRunningTime = 0;
+				totalAvgColTime = 0;//
+				totalAvg2SatTime = 0;//
+				totalMaxColTime = 0;//
+				totalMax2SatTime = 0;//
+				input = new File("tests/2pos/test" + test + "/pointsamm_" + points + ".txt");
+				output = new File("tests/2pos/test" + test + "/pointsamm_" + points + "_solved.txt");
+				for(int iteration = 0; iteration < 10; iteration++){
+					avgColTimeLoop = 0;
+					maxColTimeLoop = 0;
+					avg2SatTimeLoop = 0;
+					max2SatTimeLoop = 0;
+					startTime = System.nanoTime();
+					try{
+						if(local){
+							sc = new Scanner(input);
+						}
+						else{
+							System.out.println("Gib input pl0x");
+							sc = new Scanner(System.in);
+						}
+						readInput();
+					} catch (FileNotFoundException e){
+						System.out.println("Input file not found: " + input.getName());
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
-					else{
-					    System.out.println("Gib input pl0x");
-						sc = new Scanner(System.in);
+					solvePlacementProblem();
+					writeOutput();	
+					try{
+						long time = System.nanoTime();
+						plane.checkFinalSolution();
+						finalCheckTime += (System.nanoTime() - time);
 					}
-				} catch (FileNotFoundException e){
-					System.out.println("Input file not found: " + input.getName());
+					catch(Exception e){
+						e.printStackTrace();
+					}
+					totalRunningTime += (System.nanoTime()-startTime);
+					
+					avgColTime += avgColTimeLoop;
+					avg2SatTime += avg2SatTimeLoop;
+					if(max2SatTimeLoop > max2SatTime){
+						max2SatTime = max2SatTimeLoop;
+					}
+					if(maxColTimeLoop > maxColTime){
+						maxColTime = maxColTimeLoop;
+					}
+					if(max2SatTimeLoop > max2SatTime){
+						max2SatTime = max2SatTimeLoop;
+					}
+					if(maxColTimeLoop > maxColTime){
+						maxColTime = maxColTimeLoop;
+					}
 				}
-			    try {
-					readInput();
-
-					times.clear();
-					for(int iteration = 0; iteration < 1; iteration++){
-						long start = System.currentTimeMillis();
-						solvePlacementProblem();
-						writeOutput();
-						long stop = System.currentTimeMillis();
-						long time = (stop - start);
-						times.add(time);
-					}
-					System.out.print(calculateAverage(times) + " ");
-
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				maxHeightTime /= 10;
+				initTime /= 10;
+				avgColTime /= 10;
+				avg2SatTime /= 10;
+				nrOfLoops /= 10;
+				placementTime /= 10;
+				finalCheckTime /= 10;
+				totalRunningTime /= 10;
+				totalAvgColTime /= 10;//
+				totalAvg2SatTime /= 10;//
+				//"test_nr; max_height; real_height; max_height_time; init_time; average_collision_time; max_collision_time; ; total_average_collision_time; total_max_collision_time;"
+				//+ "average_2sat_time; max_2sat_time; total_average_2sat_time; total_max_2sat_time; nr_of_loops; placement_time; final_check_time; total_running_time";
 				
-			/*}
-			System.out.println();
-		}*/
-	    
+				s = ""+points+"_"+test+";"+maxHeight+";"+realHeight+";"+round(maxHeightTime)+";"+round(initTime)+";"+round(avgColTime)+";"+round(maxColTime)+";"+round(totalAvgColTime)+";"+round(totalMaxColTime)
+						+";"+round(totalAvg2SatTime)+";"+round(totalMax2SatTime)+";"+round(avg2SatTime)+";"+round(max2SatTime)+";"+nrOfLoops+";"+round(placementTime)+";"+round(finalCheckTime)+";"+round(totalRunningTime);
+				s = s.replaceAll("\\.", ",");
+				writer.write(s);
+				writer.newLine();
+			}
+		}
+		writer.close();
 	}
 	
+	private double round(double d){
+		d /= 100000d;
+		d = Math.round(d);
+		d /= 10d;
+		return d;
+	}
+
 	private double calculateAverage(List <Long> marks) {
-		  long sum = 0;
-		  if(!marks.isEmpty()) {
-		    for (long mark : marks) {
-		        sum += mark;
-		    }
-		    return (double)sum / marks.size();
-		  }
-		  return sum;
+		long sum = 0;
+		if(!marks.isEmpty()) {
+			for (long mark : marks) {
+				sum += mark;
+			}
+			return (double)sum / marks.size();
 		}
-	
+		return sum;
+	}
+
 
 	public void readInput() throws Exception{
 		sc.useLocale(Locale.US);
@@ -128,7 +196,7 @@ public class MapLabeler {
 				throw new Exception("Duplicate points detected");
 			}
 
-			plane = new Plane(ratio, points);
+			plane = new Plane(ratio, points, pModel);
 		}
 		else{
 			HashSet<String> pointsSet = new HashSet<String>();
@@ -140,18 +208,18 @@ public class MapLabeler {
 				points[i] = new PosPoint(x, y);
 				pointsSet.add(points[i].toString());
 			}
-			
+
 			if(points.length != pointsSet.size()){
 				throw new Exception("Duplicate points detected");
 			}
 
-			plane = new Plane(ratio, points);
+			plane = new Plane(ratio, points, pModel);
 		}	
 
 	}
 
 	Label[] iets = new Label[1];
-	
+
 	public void solvePlacementProblem(){
 		if(pModel == PlacementModel.TWOPOS){
 			plane.find2PosSolution();
