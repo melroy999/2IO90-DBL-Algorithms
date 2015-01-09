@@ -31,7 +31,7 @@ public class Label {
 	public Label(Label l){
 		this.boundPoint = l.getBoundPoint();
 		this.shift = l.getShift();
-		this.top = l.top;
+		this.top = l.isTop();
 		this.viable = l.viable;
 	}
 	

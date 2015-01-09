@@ -47,12 +47,13 @@ public class MapLabeler {
 	
 	
 	public MapLabeler() throws IOException{
-		for(int points = 100; points <= 10000; points += 100){
-			System.out.print(points + " ");
-			for(int test = 1; test <= 10; test++){
-				input = new File("tests/2pos/test" + test + "/pointsamm_" + points + ".txt");
-				output = new File("tests/2pos/test" + test + "/pointsamm_" + points + "_solved.txt");
-				
+		//for(int points = 100; points <= 10000; points += 100){
+			//System.out.print(points + " ");
+			//for(int test = 1; test <= 1; test++){
+				//input = new File("tests/4pos/test" + test + "/pointsamm_" + points + ".txt");
+				//output = new File("tests/4pos/test" + test + "/pointsamm_" + points + "_solved.txt");
+				input = new File("tests/random/4pos10000.txt");
+				output = new File("tests/random/4pos10000_solved.txt");
 				try{
 					if(local){
 						sc = new Scanner(input);
@@ -77,15 +78,18 @@ public class MapLabeler {
 						times.add(time);
 					}
 					System.out.print(calculateAverage(times) + " ");
+					
+					int iets = plane.finalIntersectionTest(false);
+					if(iets != 0) System.out.println("AAAAAAAAAAHHHH" + iets);
 
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
-			}
+			//}
 			System.out.println();
-		}
+		//}
 	    
 	}
 	
