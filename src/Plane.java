@@ -103,11 +103,10 @@ public class Plane {
 			debugPrint("Height: " + height + " lastHeight: " + lastHeight + " minHeight: " + minHeight + " maxHeight: " + maxHeight);
 			HashMap<PosPoint, Orientation> validOrientation = new HashMap<PosPoint, Orientation>();
 			ArrayList<Label> labels = new ArrayList<Label>(allLabels);//all labels will be stored in this arrayList. 	
-			ArrayList<Clause> clauses = new ArrayList<Clause>();//a list which will initially contain additional clauses.
-
+			
 			//the additional clauses are required to fix the value of a dead label to the negation of the clauseValue of that label.
 			long time = System.nanoTime();
-			HashMap<Label, ArrayList<Label>> collisions = findCollisions2pos(labels, clauses, validOrientation, quad, height);
+			HashMap<Label, ArrayList<Label>> collisions = findCollisions2pos(labels, validOrientation, quad, height);
 			
 			long collisionTime = (System.nanoTime()-time);
 			MapLabeler.avgColTimeLoop += collisionTime;
@@ -118,8 +117,7 @@ public class Plane {
 
 			time = System.nanoTime();
 			if (collisions!=null){//collisions will return null if a point with only dead labels exists
-				clauses.addAll(getClauses(collisions));//add the clauses generated with the collisions to the clauses list.
-				if(checkTwoSatisfiability(clauses)){//if a satisfiable configuration exists
+				if(checkTwoSatisfiability(getClauses(collisions))){//if a satisfiable configuration exists
 					if(minHeight <= height){
 						minHeight = height;//this height will be valid, so the minimum height becomes this height.
 						debugPrint("2-Sat satisfies.");
@@ -222,42 +220,6 @@ public class Plane {
 		MapLabeler.realHeight = (float)height;
 		
 		return posPoints;//return the array of points, now with correct positions.
-	}
-	
-	public void testValidity2Pos(PosPoint[] points){
-		Label[] labels = new Label[points.length];
-		boolean clean = true;
-		
-		for(int i = 0 ; i < points.length ; i++){
-			if(points[i].getPosition().equals(Orientation.NW)){
-				labels[i] = new Label(points[i],0,true);
-			}
-			else{
-				labels[i] = new Label(points[i],1,true);
-			}
-			
-			double top = labels[i].getBoundPoint().getY() + (labels[i].isTop() ? height : 0);
-	        double bottom = top - height;
-	        double right = labels[i].getBoundPoint().getX() + (height * aspectRatio * labels[i].getShift());
-	        double left = right - (height * aspectRatio);
-	            
-	        Rectangle2D.Double rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
-	        labels[i].setRect(rect);
-		}
-		
-		
-		for(int i = 0 ; i < points.length ; i++){
-			for(int j = 0 ; j < points.length ; j++){
-				if(i!=j){
-					if(labels[i].getRect().intersects(labels[j].getRect())){
-						System.out.println(points[i].toString() + " intersects with " + points[j].toString());
-						clean = false;
-					}
-				}
-			}
-		}
-		
-		System.out.println("collisions found: " + !clean);
 	}
 
 	public double roundToHalf(double d){
@@ -793,15 +755,18 @@ public class Plane {
 		int i;																									//sliderPoints must be sorted on x-coordinates
 		double minH = 0;
 		double maxH = MaxSize.getMaxPossibleHeight(sArray, pointer, aspectRatio, PlacementModel.ONESLIDER);
+		MapLabeler.maxHeight = (float)maxH;
 		double T = 0.01;
 		delta= 0.000000000000001; //maxH/(Math.pow(2,(1000/(sArray.length * T))));
 		//System.out.println("Precision: " + delta);
 		//System.out.println("MaxSize gives: " + maxH);
 		double currentH;
 		double saveD = 0;
-		while ((maxH-minH >= delta) && (System.currentTimeMillis() - MapLabeler.start <= 10000) && (saveD != maxH-minH) ) {
+		int loops = 0;
+		while ((maxH-minH >= delta) && (System.currentTimeMillis() - MapLabeler.start <= 290000) && (saveD != maxH-minH) ) {
+			loops++;
 			saveD = maxH - minH;
-			System.out.println(saveD);
+			//System.out.println(saveD);
 			boolean mayContinue = true;
 			currentH = (maxH + minH)/2;
 			debugPrint("Current: " + currentH);
@@ -824,7 +789,8 @@ public class Plane {
 			}
 			debugPrint("new max and min: " + maxH + ", " +  minH);
 		}
-
+		MapLabeler.nrOfLoops = loops;
+		
 		//FINAL LOOP TO PLACE ALL LABELS FOR THE MAX HEIGHT
 		//Calculate rounded height or width
 		debugPrint("____________________LAST LOOP_________________________");
@@ -935,18 +901,23 @@ public class Plane {
 	 * @param height, the height of the labels to check for.
 	 * @return a hashmap of all labels to an arraylist of labels they collide with. null if a dead point exists.
 	 */
-	public HashMap<Label, ArrayList<Label>> findCollisions2pos(ArrayList<Label> labels, ArrayList<Clause> clauses, HashMap<PosPoint, Orientation> validOrientation, QuadTree tree, double height){			
+	public HashMap<Label, ArrayList<Label>> findCollisions2pos(ArrayList<Label> labels, HashMap<PosPoint, Orientation> validOrientation, QuadTree tree, double height){			
 		HashMap<Label, ArrayList<Label>> collisions = new HashMap<Label, ArrayList<Label>>();//make a new hashmap of labels to arraylist of labels
+		//long time = System.nanoTime();
 		tree.init(labels, height, aspectRatio, 10000);//now only use the leftover labels
-		setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
+		//System.out.println("initialisation:" + (System.nanoTime()-time));
+		//setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
 
 		ArrayList<Label> overlap;//the list of labels the labels overlaps with
+		//time = System.nanoTime();
 		for(Label l: labels){//for all retained labels
-			if(l.isHasIntersect()){//if it has an intersection
-				overlap = findIntersectionQuad(tree, l);//find the labels this label intersects with
-				collisions.put(l, overlap);//put them in the mapping
-			}
+			//long time2 = System.nanoTime();
+			overlap = findIntersectionQuad(tree, l);//find the labels this label intersects with
+			//System.out.println("findIntersectionQuad: " + (System.nanoTime()-time2));
+			
+			collisions.put(l, overlap);//put them in the mapping
 		}
+		//System.out.println("fullDetection: " + (System.nanoTime()-time));
 		return collisions;//return the list of collisions
 	}	
 
@@ -1123,12 +1094,15 @@ public class Plane {
 				
 				 ArrayList<Label> returnObjects = new ArrayList<Label>();
 				 tree.retrieve(returnObjects, l);
+				 
 				 for(Label label2: returnObjects){
-					 //label2.hasIntersect = false;
-
-					 if(intersects(l, label2)){
-						 l.setHasIntersect(true);
-						 label2.setHasIntersect(true);
+					 if(Math.abs(l.getBoundPoint().getX()-label2.getBoundPoint().getX())<=2*l.getRect().getWidth()){
+						 if(Math.abs(l.getBoundPoint().getY()-label2.getBoundPoint().getY())<=2*l.getRect().getHeight()){							 
+							 if(intersects(l, label2)){
+								 l.setHasIntersect(true);
+								 label2.setHasIntersect(true);
+							 }
+						 }
 					 }
 				 }
 			 }
@@ -1141,14 +1115,19 @@ public class Plane {
 	 * @return returns if the label intersects with other labels.
 	 */
 	public boolean hasIntersectionQuad(QuadTree tree, Label l){
-		ArrayList<Label> returnObjects = new ArrayList<Label>();
+		/*ArrayList<Label> returnObjects = new ArrayList<Label>();
 		tree.retrieve(returnObjects, l);
 		for(Label l2: returnObjects){
-			if(intersects(l, l2)){
-				return true;
-			}
+			if(Math.abs(l.getBoundPoint().getX()-l2.getBoundPoint().getX())<=2*l.getRect().getWidth()){
+				 if(Math.abs(l.getBoundPoint().getY()-l2.getBoundPoint().getY())<=2*l.getRect().getHeight()){							 
+					 if(intersects(l, l2)){
+						 return true;
+					 }
+				 }
+			 }
 		}
-		return false;
+		return false;*/
+		return l.isHasIntersect();
 	}
 
 	/**
@@ -1161,31 +1140,18 @@ public class Plane {
 		ArrayList<Label> possibleInters = new ArrayList<Label>();
 		ArrayList<Label> intersections = new ArrayList<Label>();
 		tree.retrieve(possibleInters, l);
-		for(Label l2: possibleInters){
-			if(intersects(l, l2) && !l.getBoundPoint().equals(l2.getBoundPoint())){
-				l.setHasIntersect(true);
-				l2.setHasIntersect(true);
-				intersections.add(l2);
+		for(Label l2: possibleInters){		
+			if(Math.abs(l.getBoundPoint().getX()-l2.getBoundPoint().getX())<=2*l.getRect().getWidth()){
+				if(Math.abs(l.getBoundPoint().getY()-l2.getBoundPoint().getY())<=2*l.getRect().getHeight()){							 
+					if(intersects(l, l2)){
+						 l.setHasIntersect(true);
+						 l2.setHasIntersect(true);
+						 intersections.add(l2);
+					}
+				}
 			}
 		}
 		return intersections;
-	}
-
-
-	/**
-	 * 
-	 * @param labels are the labels that overlap with the given label
-	 * @param the label that could contain these points
-	 * @return returns the labels that have their boundpoint contained in this label
-	 */
-	public ArrayList<Label> containsPoint(ArrayList<Label> labels, Label l){
-		ArrayList<Label> contained = new ArrayList<Label>();//arraylist to be returned
-		for(Label l2: labels){//for all labels in the labels arraylist
-			if(!l2.getBoundPoint().equals(l.getBoundPoint()) && contains(l.getRect(),l2.getX(),l2.getY(),true)){//check if the point is IN the label
-				contained.add(l2);//if so, add it to contained
-			}
-		}
-		return contained;//return the contained list
 	}
 
 	public boolean contains(Rectangle2D rec, double x, double y, boolean in){
@@ -1455,6 +1421,9 @@ public class Plane {
 				}	
 			}
 		}
+		/*if(amount > 0){
+			System.out.println(intersecting);
+		}*/
 		return amount;
 	}
 }

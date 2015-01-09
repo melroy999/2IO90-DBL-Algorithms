@@ -42,7 +42,7 @@ public class MapLabeler {
 	public static int nrOfLoops = 0;//
 	public static long placementTime = 0;//
 	public static long finalCheckTime = 0;
-	public static long totalRunningTime = 0;//
+	public static long averageRunningTime = 0;//
 	
 	public static long avgColTimeLoop = 0;//
 	public static long avg2SatTimeLoop = 0;//
@@ -52,14 +52,27 @@ public class MapLabeler {
 	public static long startTime = 0;
 
 	public MapLabeler() throws IOException{
-		File outputFile = new File("tests/2pos/testResult_maxHeight.csv");
+		pModel = PlacementModel.FOURPOS;
+		String testing = "4pos";
+		File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v2.csv");
 		outputFile.createNewFile();
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
-		String s ="test_nr; max_height; real_height; max_height_time; init_time; average_collision_time; max_collision_time; total_average_collision_time; total_max_collision_time; "
-				+ "average_2sat_time; max_2sat_time; total_average_2sat_time; total_max_2sat_time; nr_of_loops; placement_time; final_check_time; total_running_time";
+		String s = "";
+		if(pModel == PlacementModel.TWOPOS){
+			s = "test_nr; max_height; real_height; max_height_time; init_time; average_collision_time; max_collision_time; total_average_collision_time; total_max_collision_time; "
+					+ "average_2sat_time; max_2sat_time; total_average_2sat_time; total_max_2sat_time; nr_of_loops; placement_time; final_check_time; average_running_time";
+		}
+		else if(pModel == PlacementModel.FOURPOS){
+			s = "";
+		}
+		else{
+			s = "test_nr ; maxHeight; realHeight; maxHeightTime; initTime; avgColTime; maxColTime; totalAvgColTime; totalMaxColTime"
+					+"; nrOfLoops; finalCheckTime; averageRunningTime";
+		}
 		writer.write(s);
 		writer.newLine();
-		for(int points = 1000; points <= 1000; points += 100){
+		for(int points = 100; points <= 100; points += 100){
+			System.out.println(points);
 			for(int test = 1; test <= 10; test++){
 				maxHeight = 0;
 				realHeight = 0;
@@ -72,13 +85,13 @@ public class MapLabeler {
 				nrOfLoops = 0;
 				placementTime = 0;
 				finalCheckTime = 0;
-				totalRunningTime = 0;
+				averageRunningTime = 0;
 				totalAvgColTime = 0;//
 				totalAvg2SatTime = 0;//
 				totalMaxColTime = 0;//
 				totalMax2SatTime = 0;//
-				input = new File("tests/2pos/test" + test + "/pointsamm_" + points + ".txt");
-				output = new File("tests/2pos/test" + test + "/pointsamm_" + points + "_solved.txt");
+				input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
+				output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
 				for(int iteration = 0; iteration < 10; iteration++){
 					avgColTimeLoop = 0;
 					maxColTimeLoop = 0;
@@ -102,15 +115,18 @@ public class MapLabeler {
 					}
 					solvePlacementProblem();
 					writeOutput();	
-					try{
-						long time = System.nanoTime();
-						plane.checkFinalSolution();
-						finalCheckTime += (System.nanoTime() - time);
+					if(!pModel.equals(PlacementModel.ONESLIDER)){
+						try{
+							long time = System.nanoTime();
+							plane.checkFinalSolution();
+							finalCheckTime += (System.nanoTime() - time);
+						}
+						catch(Exception e){
+							System.out.println(test + ";" + iteration);
+							e.printStackTrace();
+						}
 					}
-					catch(Exception e){
-						e.printStackTrace();
-					}
-					totalRunningTime += (System.nanoTime()-startTime);
+					averageRunningTime += (System.nanoTime()-startTime);
 					
 					avgColTime += avgColTimeLoop;
 					avg2SatTime += avg2SatTimeLoop;
@@ -134,14 +150,22 @@ public class MapLabeler {
 				nrOfLoops /= 10;
 				placementTime /= 10;
 				finalCheckTime /= 10;
-				totalRunningTime /= 10;
+				averageRunningTime /= 10;
 				totalAvgColTime /= 10;//
 				totalAvg2SatTime /= 10;//
-				//"test_nr; max_height; real_height; max_height_time; init_time; average_collision_time; max_collision_time; ; total_average_collision_time; total_max_collision_time;"
-				//+ "average_2sat_time; max_2sat_time; total_average_2sat_time; total_max_2sat_time; nr_of_loops; placement_time; final_check_time; total_running_time";
-				
-				s = ""+points+"_"+test+";"+maxHeight+";"+realHeight+";"+round(maxHeightTime)+";"+round(initTime)+";"+round(avgColTime)+";"+round(maxColTime)+";"+round(totalAvgColTime)+";"+round(totalMaxColTime)
-						+";"+round(totalAvg2SatTime)+";"+round(totalMax2SatTime)+";"+round(avg2SatTime)+";"+round(max2SatTime)+";"+nrOfLoops+";"+round(placementTime)+";"+round(finalCheckTime)+";"+round(totalRunningTime);
+								
+				if(pModel == PlacementModel.TWOPOS){
+					s = ""+points+"_"+test+";"+maxHeight+";"+realHeight+";"+round(maxHeightTime)+";"+round(initTime)+";"+round(avgColTime)+";"+round(maxColTime)+";"+round(totalAvgColTime)+";"+round(totalMaxColTime)
+							+";"+round(totalAvg2SatTime)+";"+round(totalMax2SatTime)+";"+round(avg2SatTime)+";"+round(max2SatTime)+";"+nrOfLoops+";"+round(placementTime)+";"+round(finalCheckTime)+";"+round(averageRunningTime);
+
+				}
+				else if(pModel == PlacementModel.ONESLIDER){
+					s = ""+points+"_"+test+";"+maxHeight+";"+realHeight+";"+round(maxHeightTime)+";"+round(initTime)+";"+round(avgColTime)+";"+round(maxColTime)+";"+round(totalAvgColTime)+";"+round(totalMaxColTime)
+							+";"+nrOfLoops+";"+round(finalCheckTime)+";"+round(averageRunningTime);
+				}
+				else{
+					s = "";
+				}
 				s = s.replaceAll("\\.", ",");
 				writer.write(s);
 				writer.newLine();
