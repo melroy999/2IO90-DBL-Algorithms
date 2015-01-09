@@ -79,8 +79,8 @@ public class MapLabeler {
 					}
 					System.out.print(calculateAverage(times) + " ");
 					
-					int iets = plane.finalIntersectionTest(false);
-					if(iets != 0) System.out.println("AAAAAAAAAAHHHH" + iets);
+					//int iets = plane.finalIntersectionTest(false);
+					//if(iets != 0) System.out.println("AAAAAAAAAAHHHH" + iets);
 
 				} catch (Exception e) {
 					// TODO Auto-generated catch block

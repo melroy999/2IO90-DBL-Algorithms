@@ -3,12 +3,10 @@ import java.util.ArrayList;
 public class Point {
 	private int x;
 	private int y;
-	private ArrayList<Label> labels;
 
 	public Point(int x, int y){
 		this.x = x;
 		this.y = y;
-		labels = new ArrayList<Label>();
 	}
 
 	public int getX() {
@@ -19,25 +17,9 @@ public class Point {
 		return y;
 	}
 	
-	public ArrayList<Label> getLabels(){
+	/*public ArrayList<Label> getLabels(){
 		return labels;
-	}
-	
-	public boolean isNotDead(){
-		return !labels.isEmpty();
-	}
-	
-	public void removeLabel(Label l){
-		labels.remove(l);
-	}
-	
-	public void addLabel(Label l){
-		labels.add(l);
-	}
-	
-	public void setLabels(ArrayList<Label> labelList){
-		this.labels = labelList;
-	}
+	}*/
 	
 	/**
 	 * returns a string representation of this point
