@@ -23,6 +23,7 @@ public class Plane {
 	private double aspectRatio;
 	private int numberOfPoints;
 	private double height;
+	private PlacementModel pModel;
 
 	private HashMap<ClauseValue, Integer> connectedComponents;//saves the connected component number the clauseValue is part of.
 	private DirectedGraph minGraph;//saves the graph of the iteration with a solvable situation.
@@ -31,11 +32,10 @@ public class Plane {
 	private SliderPoint[] sliderPoints;
 	public int[] xPointArray;  //slider pointers
 	private PosPoint[] posPoints;
-	private PlacementModel pModel;
-	
+
 	private double delta = 0.001;//difference of border
-	private boolean debug = false;
-	
+	private boolean debug = !true;
+
 	public Plane(double aspectRatio, SliderPoint[] points, PlacementModel pModel){
 		this.aspectRatio = aspectRatio;
 		this.numberOfPoints = points.length;
@@ -223,6 +223,42 @@ public class Plane {
 		
 		return posPoints;//return the array of points, now with correct positions.
 	}
+	
+	public void testValidity2Pos(PosPoint[] points){
+		Label[] labels = new Label[points.length];
+		boolean clean = true;
+		
+		for(int i = 0 ; i < points.length ; i++){
+			if(points[i].getPosition().equals(Orientation.NW)){
+				labels[i] = new Label(points[i],0,true);
+			}
+			else{
+				labels[i] = new Label(points[i],1,true);
+			}
+			
+			double top = labels[i].getBoundPoint().getY() + (labels[i].isTop() ? height : 0);
+	        double bottom = top - height;
+	        double right = labels[i].getBoundPoint().getX() + (height * aspectRatio * labels[i].getShift());
+	        double left = right - (height * aspectRatio);
+	            
+	        Rectangle2D.Double rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+	        labels[i].setRect(rect);
+		}
+		
+		
+		for(int i = 0 ; i < points.length ; i++){
+			for(int j = 0 ; j < points.length ; j++){
+				if(i!=j){
+					if(labels[i].getRect().intersects(labels[j].getRect())){
+						System.out.println(points[i].toString() + " intersects with " + points[j].toString());
+						clean = false;
+					}
+				}
+			}
+		}
+		
+		System.out.println("collisions found: " + !clean);
+	}
 
 	public double roundToHalf(double d){
 		return Math.round(2*d)/2d;//returns the rounded value of 2*d, divided by double type value 2.
@@ -250,11 +286,14 @@ public class Plane {
 	private Orientation from;
 	private Orientation to;
 	boolean print = false;
+	boolean print2 = !true;
+	
+	Orientation initial;
 	
 	public Label[] find4PosSolutionSA(){
-		double coolingRate = 0.0003;
+		double coolingRate = 0.00003;
 		double initialTemp = 10000;
-		double initialHeight = 100;
+		double initialHeight = 250;
 		
 		
 		int range = 10000;
@@ -265,10 +304,10 @@ public class Plane {
 		int bestEnergy = Integer.MAX_VALUE;
 		
 		int[] xSortedOrder = MergeSort.sort(posPoints);//sorting the points on x-cor, referencing by index in this array.
-		double minHeight = (aspectRatio < 1) ? 1 : (1/(2*aspectRatio));//minimal height	
+		double minHeight = (aspectRatio < 1) ? 0.5 : (1/(2*aspectRatio));//minimal height	
 		//TODO Melroy: minimale height is een half keer de aspectratio de 2* moet er bij
-		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);//2x the maximal height, so that we start with the calculated max-height in the loop.
-		maxHeight = initialHeight;
+		//double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);//2x the maximal height, so that we start with the calculated max-height in the loop.
+		double maxHeight = initialHeight;
 		
 		height = maxHeight;//height to use is the average of max and min height
 		double lastHeight = 0;
@@ -281,12 +320,12 @@ public class Plane {
 		
 		
 		
-		while(lastHeight != height){
+		while(lastHeight != height && height != finalHeight){
 			
 			LabelConfiguration current = new LabelConfiguration(posPoints, height, aspectRatio);
 			
 			
-			debugPrint("------>  height: " + height);
+			debugPrint("------>  height: " + height + " min " +minHeight + " max " + maxHeight);
 			
 			best = new LabelConfiguration(current.getLabels());
 			quad.init(current.getLabels(), height, aspectRatio, 10000);//initialize the quadtree
@@ -308,11 +347,9 @@ public class Plane {
 				LabelConfiguration newSolution = current;
 				int position = (int) (newSolution.labelSize() * r.nextDouble());
 				
-				Label lChanged = labels[position];
+				Label lChanged = newSolution.getLabels()[position];
 				ArrayList<Label> before = getIntersections(quad,lChanged);
 				
-				
-				//Orientation[] options = new Orientation[]{Orientation.NE, Orientation.NW, Orientation.SE, Orientation.SW};
 				ArrayList<Orientation> options = new ArrayList<Orientation>();
 				options.add(Orientation.NE);
 				options.add(Orientation.NW);
@@ -326,17 +363,13 @@ public class Plane {
 				labels = current.getLabels();
 				ArrayList<Label> after = getIntersections(quad,lChanged);
 				
-				Orientation initial = newSolution.getLastFrom();
-				
-				//System.out.println("Initial: " + initial);
+				initial = newSolution.getLastFrom();
 				
 				int counter = 0;
 				from = initial;
 				to = newSolution.getLastTo();
 				boolean triedall = false;
 				while(!containsPoint2(after,lChanged, height).isEmpty()){
-					//System.out.println("To: " + newSolution.getLastTo());
-					//System.out.println("Iteration" + counter);
 					counter++;
 					if(options.size() == 0){
 						if(!triedall){
@@ -354,24 +387,13 @@ public class Plane {
 					quad.updateLabel(lChanged, height, aspectRatio);
 					labels = current.getLabels();
 					after = getIntersections(quad,lChanged);
-					
-					
-					
 				}
-				
-				/*
-				if(containsPoint(after,lChanged).isEmpty()){
-					System.out.println("   Does not contain");
-				}
-				else {
-					System.out.println("   Does contain");
-				}*/
-				
 				
 				
 				
 				
 				neighbourEnergy = calculateScore(quad, currentEnergy, lChanged, before, after);
+				
 				
 				
 				if(neighbourEnergy < bestEnergy){
@@ -385,35 +407,40 @@ public class Plane {
 				if (calculateAcceptance(currentEnergy, neighbourEnergy, temp) > r.nextDouble()) {
 					current = newSolution;
 					currentEnergy = neighbourEnergy;
+					
+					//labels = newSolution.getLabels();
+					/*if(finalIntersectionTest(false) != currentEnergy){
+						
+						if(print)debugPrint("####################################################");
+						if(print)debugPrint("############  EN WEL GODVERDOMME  ##################");
+						if(print)debugPrint("####################################################");
+						
+						//labels = current
+						labels = newSolution.getLabels();
+						if(print2) debugPrint(finalIntersectionTest(print) + "");
+						//ietsmeteentest(current.getLabels());
+						
+						if(print)debugPrint("");
+						
+					}*/
+					
 	            }
 				else {
-					
+					if(print)debugPrint("    changeback################################################################################");
 					newSolution.changeBack(initial);
 					
-					//System.out.println("^^^ Not accepted");
-					//System.out.print("          changed back: ");
 					for(int i = 0; i < changed.size(); i++){
 						Label l = changed.get(i);
 						boolean had = l.isHasIntersect();
 						l.setHasIntersect(!had);
-						//System.out.print(l + " to " + !had + ", ");
 					}
-					//System.out.println();
 					quad.updateLabel(lChanged, height, aspectRatio);
 					current = newSolution;
-					
-					
-					//labels = current.getLabels();
-					//oldIntersect(true);
-					
+				
 				}
+				
 				if (neighbourEnergy < bestEnergy) {
 					debugPrint("^new best: " + neighbourEnergy);
-					
-					//labels = newSolution.getLabels();
-					//oldIntersect(true);
-					
-					
 					best = new LabelConfiguration(newSolution.getLabels());
 	                bestEnergy = neighbourEnergy;
 	            }
@@ -423,11 +450,24 @@ public class Plane {
 			}
 			
 			if(bestEnergy == 0){
-				if(finalHeight < height){
-					finalBest = new LabelConfiguration(best.getLabels());
-					finalHeight = height;
-				}
-				minHeight = height;
+				labels = best.getLabels();
+				//if(finalIntersectionTest(false) != 0){
+				//	debugPrint("EN WEL GODVERDOMME");
+					
+					
+				//	height = height-1;
+					
+					
+					
+				//}
+				//else {
+					if(finalHeight < height){
+						finalBest = new LabelConfiguration(best.getLabels());
+						finalHeight = height;
+						debugPrint("NEW FINAL HEIGHT");
+					}
+					minHeight = height;
+				//}
 			}
 			else {
 				maxHeight = height;
@@ -450,11 +490,9 @@ public class Plane {
 		}
 		
 		debugPrint("FINAL HEIGHT: " + height);
-		//debugPrint("FINAL BEST ENERGY: " + bestEnergy);
 		debugPrint("FINAL BEST: " + finalBest);
 		
 		labels = finalBest.getLabels();
-		//oldIntersect(true);
 		
 		debugPrint("Time for collision detection: " + timeColDect);
 		return finalBest.getLabels();
@@ -525,11 +563,7 @@ public class Plane {
 			//debugPrint("Old Score : " + oldScore);
 			amount = oldScore;
 			
-			for (Label l : after){
-				if (!before.contains(l)) before.add(l);
-			}
 			
-			if (!before.contains(lChanged)) { before.add(lChanged); }
 			
 			
 			if(print) System.out.print("      Current: ");
@@ -539,7 +573,24 @@ public class Plane {
 			if(print) System.out.println();
 			
 			
-			if(print) System.out.println("      Changed: " + lChanged + " comming from: " + from + " to " + to);
+			if(print) System.out.print("      Before: ");
+			for(int i = 0; i < before.size(); i++){
+				if(before.get(i).isHasIntersect()) if(print) System.out.print(before.get(i) + " ");
+			}
+			if(print) System.out.println();
+			
+			for (Label l : after){
+				if (!before.contains(l)) before.add(l);
+			}
+			
+			if (!before.contains(lChanged)) { before.add(lChanged); }
+			if(print) System.out.print("      AFter : ");
+			for(int i = 0; i < after.size(); i++){
+				if(after.get(i).isHasIntersect()) if(print) System.out.print(after.get(i) + " ");
+			}
+			if(print) System.out.println();
+			
+			if(print) System.out.println("      Changed: " + lChanged + " comming from: " + initial + " to " + to);
 			if(print) System.out.print("      Remove : ");
 			
 			int subtract = 0;
@@ -550,7 +601,7 @@ public class Plane {
 					if(print) System.out.print(l + " ");
 					l.setHasIntersect(false);
 					subtract++;
-				}
+				} else { if(print) System.out.print("(" + l + ") "); }
 				
 			}
 			if(print) System.out.println();
@@ -561,7 +612,7 @@ public class Plane {
 			
 			for(int i = 0; i < before.size(); i++){
 				Label l = before.get(i);
-				if(!l.isHasIntersect()){
+				//if(!l.isHasIntersect()){
 					ArrayList<Label> returnObjects = new ArrayList<Label>();
 					quad.retrieve(returnObjects, l);
 					for(int j = 0; j < returnObjects.size(); j++){
@@ -581,7 +632,7 @@ public class Plane {
 							}
 						}	
 					}	
-				}
+				//}
 			}
 			
 			if(print) System.out.println();
@@ -625,6 +676,7 @@ public class Plane {
 		 ArrayList<Label> intersections = new ArrayList<Label>();
 		 tree.retrieve(possibleInters, l);
 		 for(Label l2: possibleInters){
+			 //System.out.println("intersection between: " + l + " and " + l2 + " is " + intersects(l, l2));
 			 if(intersects(l, l2)){
 				 intersections.add(l2);
 			 }
@@ -1318,7 +1370,7 @@ public class Plane {
 			}
 		}
 	}
-
+	
 	public void checkFinalSolution() throws Exception{
 		labels = new Label[numberOfPoints];
 		if(pModel == PlacementModel.ONESLIDER){

@@ -59,7 +59,7 @@ public class MapLabeler {
 				+ "average_2sat_time; max_2sat_time; total_average_2sat_time; total_max_2sat_time; nr_of_loops; placement_time; final_check_time; total_running_time";
 		writer.write(s);
 		writer.newLine();
-		for(int points = 10000; points <= 10000; points += 100){
+		for(int points = 1000; points <= 1000; points += 100){
 			for(int test = 1; test <= 10; test++){
 				maxHeight = 0;
 				realHeight = 0;
@@ -219,7 +219,7 @@ public class MapLabeler {
 	}
 
 	Label[] iets = new Label[1];
-
+	
 	public void solvePlacementProblem(){
 		if(pModel == PlacementModel.TWOPOS){
 			plane.find2PosSolution();

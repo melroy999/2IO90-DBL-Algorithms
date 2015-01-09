@@ -5,8 +5,8 @@ import java.util.Random;
 
 public class QuadTree {
 
-	private int MAX_OBJECTS = 2;
-	private int MAX_LEVELS = 5;
+	private int MAX_OBJECTS = 20;
+	private int MAX_LEVELS = 20;
 	private int level;
 	private ArrayList<Label> elements;
 	public Rectangle2D bounds;
