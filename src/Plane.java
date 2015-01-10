@@ -62,54 +62,31 @@ public class Plane {
 
 	/**
 	 * 
-	 * @return The solution to the 2pos problem. It first calculates the maximum
-	 *         height and the orientation of every label. This method returns
-	 *         the orientation array. Where every element is one of
-	 *         PlacementModel.NE, PlacementModel.NW.
+	 * @return The solution to the 2pos problem. It first calculates the maximum height and the orientation of every label. This method returns the orientation array. Where every element is one of PlacementModel.NE, PlacementModel.NW.
 	 */
 	public PosPoint[] find2PosSolution() {
-		int[] xSortedOrder = MergeSort.sort(posPoints);// sorting the points on
-														// x-cor, referencing by
-														// index in this array.
+		int[] xSortedOrder = MergeSort.sort(posPoints);// sorting the points onx-cor, referencing by index in this array.
 
 		// int range = 10000;//the range of the coordinates from 0 to range
 
-		double minHeight = (aspectRatio <= 1) ? 1d : (1d / (2d * aspectRatio));// minimal
-																				// height
-		// TODO is it really true that 2*aspectRatio for 2Pos solution? can't
-		// all labels be put in the same orientation,
-		// TODO and still not cause overlap? all points have at least 1x1 free
-		// space, no matter the location, as long as all
-		// TODO labels are orientated the same way, which is the simplest and
-		// minimal solution.
-		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);// find
-																														// the
-																														// max
-																														// height
+		double minHeight = (aspectRatio <= 1) ? 1d : (1d / (2d * aspectRatio));// minimal height
+		// TODO is it really true that 2*aspectRatio for 2Pos solution? can't all labels be put in the same orientation,
+		// TODO and still not cause overlap? all points have at least 1x1 free space, no matter the location, as long as all
+		// TODO labels are orientated the same way, which is the simplest and minimal solution.
+		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);// find the max height
 
 		MapLabeler.maxHeight = (float) maxHeight;
 
 		height = maxHeight;// height to use initially is the max height.
-		double lastHeight = 0;// a value to find out if you are checking for the
-								// same height twice in succession.
+		double lastHeight = 0;// a value to find out if you are checking for the same height twice in succession.
 
-		ArrayList<Label> allLabels = new ArrayList<Label>();// all labels will
-															// be stored in this
-															// arrayList, will
-															// be copied later
-															// after each
-															// iteration.
+		ArrayList<Label> allLabels = new ArrayList<Label>();// all labels will be stored in this arrayList, will be copied later after each iteration.
 
-		clauseToPoint = new HashMap<ClauseValue, PosPoint>();// make a new
-																// mapping
-																// connecting
-																// clauseValues
-																// with points.
+		clauseToPoint = new HashMap<ClauseValue, PosPoint>();// make a new mapping connecting clauseValues with points.
 
 		rangeX = posPoints[xSortedOrder[xSortedOrder.length - 1]].getX();
 
-		for (int i = 0; i < xSortedOrder.length; i++) {// make the top labels
-														// for all points.
+		for (int i = 0; i < xSortedOrder.length; i++) {// make the top labels for all points.
 			int pointer = xSortedOrder[i];
 			PosPoint p = posPoints[pointer];
 
@@ -133,13 +110,11 @@ public class Plane {
 
 					if (!clean) {
 						Label NE = new Label(p, 1, true);
-						allLabels.add(NE);// shift=1 and top=true gives us the
-											// NE label;
+						allLabels.add(NE);// shift=1 and top=true gives us the NE label;
 						clauseToPoint.put(NE.toClause(), p);
 
 						Label NW = new Label(p, 0, true);
-						allLabels.add(NW);// shift=1 and top=true gives us the
-											// NE label;
+						allLabels.add(NW);// shift=1 and top=true gives us the NE label;
 						clauseToPoint.put(NW.toClause(), p);
 
 						clean = true;
@@ -162,36 +137,44 @@ public class Plane {
 
 						if (!clean) {
 							Label NE = new Label(p, 1, true);
-							allLabels.add(NE);// shift=1 and top=true gives us
-												// the NE label;
+							allLabels.add(NE);// shift=1 and top=true gives us the NE label;
 							clauseToPoint.put(NE.toClause(), p);
 
 							Label NW = new Label(p, 0, true);
-							allLabels.add(NW);// shift=1 and top=true gives us
-												// the NE label;
+							allLabels.add(NW);// shift=1 and top=true gives us the NE label;
 							clauseToPoint.put(NW.toClause(), p);
 						} else {
 							p.setPosition(Orientation.NW);
 						}
 					}
 				} else {// i = posPoints.length-1
-					p.setPosition(Orientation.NE);
+					Label NE = new Label(p, 1, true);
+					allLabels.add(NE);// shift=1 and top=true gives us the
+										// NE label;
+					clauseToPoint.put(NE.toClause(), p);
+		
+					Label NW = new Label(p, 0, true);
+					allLabels.add(NW);// shift=1 and top=true gives us the NE label;
+					clauseToPoint.put(NW.toClause(), p);
+					
+					//p.setPosition(Orientation.NE);
 				}
 			} else {// i==0
-				p.setPosition(Orientation.NW);
+				Label NE = new Label(p, 1, true);
+				allLabels.add(NE);// shift=1 and top=true gives us the
+									// NE label;
+				clauseToPoint.put(NE.toClause(), p);
+	
+				Label NW = new Label(p, 0, true);
+				allLabels.add(NW);// shift=1 and top=true gives us the NE label;
+				clauseToPoint.put(NW.toClause(), p);
+				
+				//p.setPosition(Orientation.NW);
 			}
 
 		}
 
-		QuadTree quad = new QuadTree(0, new Rectangle(0, 0, rangeX + 1, rangeY + 1));// new
-																						// quadtree
-																						// with
-																						// (top)
-																						// level
-																						// 0
-																						// and
-																						// dimensions
-																						// (range+1)^2
+		QuadTree quad = new QuadTree(0, new Rectangle(0, 0, rangeX + 1, rangeY + 1));// new quadtree with (top) level 0 and dimensions (range+1)^2
 
 		int loops = 0;
 
@@ -201,14 +184,7 @@ public class Plane {
 										// the last checked height
 			debugPrint("Height: " + height + " lastHeight: " + lastHeight + " minHeight: " + minHeight + " maxHeight: " + maxHeight);
 			HashMap<PosPoint, Orientation> validOrientation = new HashMap<PosPoint, Orientation>();
-			ArrayList<Label> labels = new ArrayList<Label>(allLabels);// all
-																		// labels
-																		// will
-																		// be
-																		// stored
-																		// in
-																		// this
-																		// arrayList.
+			ArrayList<Label> labels = new ArrayList<Label>(allLabels);// all labels will be stored in this arrayList.
 
 			// the additional clauses are required to fix the value of a dead
 			// label to the negation of the clauseValue of that label.
@@ -250,9 +226,7 @@ public class Plane {
 								// iteration.
 
 			/*
-			 * Calculate the next candidate value, considering that the distance
-			 * between points is always an integer. This means that the height
-			 * or the width (or both) MUST be divisible by 0.5.
+			 * Calculate the next candidate value, considering that the distance between points is always an integer. This means that the height or the width (or both) MUST be divisible by 0.5.
 			 */
 
 			height = (maxHeight + minHeight) / 2;// calculate the average of the
@@ -382,9 +356,8 @@ public class Plane {
 		int[] xSortedOrder = MergeSort.sort(posPoints);// sorting the points on x-cor, referencing by index in this array.
 		double minHeight = (aspectRatio < 1) ? 0.5 : (1 / (2 * aspectRatio));// minimal height
 
-		// double maxHeight = MaxSize.getMaxPossibleHeight(posPoints,
-		// xSortedOrder, aspectRatio, PlacementModel.FOURPOS);//2x the maximal
-		// height, so that we start with the calculated max-height in the loop.
+		// double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);
+		//2x the maximal height, so that we start with the calculated max-height in the loop.
 		double maxHeight = initialHeight;
 
 		height = maxHeight;// height to use is the average of max and min height
@@ -477,17 +450,9 @@ public class Plane {
 						/*
 						 * if(finalIntersectionTest(false) != currentEnergy){
 						 * 
-						 * if(print)debugPrint(
-						 * "####################################################"
-						 * ); if(print)debugPrint(
-						 * "############  EN WEL GODVERDOMME  ##################"
-						 * ); if(print)debugPrint(
-						 * "####################################################"
-						 * );
+						 * if(print)debugPrint( "####################################################" ); if(print)debugPrint( "############  EN WEL GODVERDOMME  ##################" ); if(print)debugPrint( "####################################################" );
 						 * 
-						 * //labels = current labels = newSolution.getLabels();
-						 * if(print2) debugPrint(finalIntersectionTest(print) +
-						 * ""); //ietsmeteentest(current.getLabels());
+						 * //labels = current labels = newSolution.getLabels(); if(print2) debugPrint(finalIntersectionTest(print) + ""); //ietsmeteentest(current.getLabels());
 						 * 
 						 * if(print)debugPrint("");
 						 * 
@@ -774,26 +739,19 @@ public class Plane {
 	}
 
 	/*
-	 * public int oldIntersect(boolean print){ //boolean print = true; //print =
-	 * false;
+	 * public int oldIntersect(boolean print){ //boolean print = true; //print = false;
 	 * 
-	 * int range = 10000; int amount = 0; Label[] otherLabels = new
-	 * Label[labels.length];
+	 * int range = 10000; int amount = 0; Label[] otherLabels = new Label[labels.length];
 	 * 
 	 * 
-	 * if(print) System.out.print("  Before: "); for(int i = 0; i <
-	 * labels.length; i++){ if(print) if(labels[i].isHasIntersect())
-	 * System.out.print(labels[i] + " "); } if(print) System.out.println();
+	 * if(print) System.out.print("  Before: "); for(int i = 0; i < labels.length; i++){ if(print) if(labels[i].isHasIntersect()) System.out.print(labels[i] + " "); } if(print) System.out.println();
 	 * 
 	 * 
 	 * //otherLabels = labels.clone();
 	 * 
-	 * for(int i = 0; i < labels.length; i++){ otherLabels[i] = new
-	 * Label(labels[i]); otherLabels[i].setHasIntersect(false); }
+	 * for(int i = 0; i < labels.length; i++){ otherLabels[i] = new Label(labels[i]); otherLabels[i].setHasIntersect(false); }
 	 * 
-	 * QuadTree quad = new QuadTree(0, new Rectangle(0,0,range,range));
-	 * quad.init(otherLabels, height, aspectRatio, 10000);//initialize the
-	 * quadtree
+	 * QuadTree quad = new QuadTree(0, new Rectangle(0,0,range,range)); quad.init(otherLabels, height, aspectRatio, 10000);//initialize the quadtree
 	 * 
 	 * 
 	 * ArrayList<Label> intersecting = new ArrayList<Label>();
@@ -801,19 +759,12 @@ public class Plane {
 	 * 
 	 * for(int i = 0; i < otherLabels.length; i++){ Label l = otherLabels[i];
 	 * 
-	 * if(!intersecting.contains(l)){ ArrayList<Label> returnObjects = new
-	 * ArrayList<Label>(); quad.retrieve(returnObjects, l); for(int j = 0; j <
-	 * returnObjects.size(); j++){ Label label2 = returnObjects.get(j);
-	 * if(intersects(l, label2)){ if(!intersecting.contains(l)){
-	 * intersecting.add(l); amount++; } if(!intersecting.contains(label2)){
-	 * intersecting.add(label2); amount++; } } } } }
+	 * if(!intersecting.contains(l)){ ArrayList<Label> returnObjects = new ArrayList<Label>(); quad.retrieve(returnObjects, l); for(int j = 0; j < returnObjects.size(); j++){ Label label2 = returnObjects.get(j); if(intersects(l, label2)){ if(!intersecting.contains(l)){ intersecting.add(l); amount++; } if(!intersecting.contains(label2)){ intersecting.add(label2); amount++; } } } } }
 	 * 
 	 * if(print) System.out.print("Currently intersected: " + amount + ": ");
 	 * 
 	 * 
-	 * for(int j = 0; j < intersecting.size(); j++){ if(print)
-	 * System.out.print(intersecting.get(j) + " "); } if(print)
-	 * System.out.println();
+	 * for(int j = 0; j < intersecting.size(); j++){ if(print) System.out.print(intersecting.get(j) + " "); } if(print) System.out.println();
 	 * 
 	 * //System.out.println();
 	 * 
@@ -1013,14 +964,12 @@ public class Plane {
 	 * @param labels
 	 *            , list of all labels, including alive and dead labels.
 	 * @param clauses
-	 *            , empty arrayList of clauses, points with dead labels will get
-	 *            a special clause.
+	 *            , empty arrayList of clauses, points with dead labels will get a special clause.
 	 * @param tree
 	 *            , the quadtree used to find collisions.
 	 * @param height
 	 *            , the height of the labels to check for.
-	 * @return a hashmap of all labels to an arraylist of labels they collide
-	 *         with. null if a dead point exists.
+	 * @return a hashmap of all labels to an arraylist of labels they collide with. null if a dead point exists.
 	 */
 	public ArrayList<Clause> findCollisions2pos(ArrayList<Label> labels, HashMap<PosPoint, Orientation> validOrientation, QuadTree tree, double height) {
 		ArrayList<Clause> clauses = new ArrayList<Clause>();
@@ -1075,8 +1024,7 @@ public class Plane {
 	 * 
 	 * @param collisions
 	 *            : list of all collisions found by the findCollisions method.
-	 * @return returns the clauses generated by converting the collisions to
-	 *         clauses.
+	 * @return returns the clauses generated by converting the collisions to clauses.
 	 */
 
 	public double getAspectRatio() {
@@ -1204,8 +1152,7 @@ public class Plane {
 	/**
 	 * 
 	 * @param quadtree
-	 *            generated with the quadtree constructor. sets the correct
-	 *            hasIntersect values for the labels.
+	 *            generated with the quadtree constructor. sets the correct hasIntersect values for the labels.
 	 */
 	public void setIntersectionsQuad(QuadTree tree, ArrayList<Label> labels) {
 		for (int i = 0; i < labels.size(); i++) {
@@ -1240,14 +1187,7 @@ public class Plane {
 	 */
 	public boolean hasIntersectionQuad(QuadTree tree, Label l) {
 		/*
-		 * ArrayList<Label> returnObjects = new ArrayList<Label>();
-		 * tree.retrieve(returnObjects, l); for(Label l2: returnObjects){
-		 * if(Math
-		 * .abs(l.getBoundPoint().getX()-l2.getBoundPoint().getX())<=2*l.getRect
-		 * ().getWidth()){
-		 * if(Math.abs(l.getBoundPoint().getY()-l2.getBoundPoint(
-		 * ).getY())<=2*l.getRect().getHeight()){ if(intersects(l, l2)){ return
-		 * true; } } } } return false;
+		 * ArrayList<Label> returnObjects = new ArrayList<Label>(); tree.retrieve(returnObjects, l); for(Label l2: returnObjects){ if(Math .abs(l.getBoundPoint().getX()-l2.getBoundPoint().getX())<=2*l.getRect ().getWidth()){ if(Math.abs(l.getBoundPoint().getY()-l2.getBoundPoint( ).getY())<=2*l.getRect().getHeight()){ if(intersects(l, l2)){ return true; } } } } return false;
 		 */
 		return l.isHasIntersect();
 	}
@@ -1364,8 +1304,7 @@ public class Plane {
 	 * 
 	 * @param graph
 	 *            : the directed graph.
-	 * @return a mapping from clauseValues to integers, with integer being the
-	 *         connected component the clauseValue is part of
+	 * @return a mapping from clauseValues to integers, with integer being the connected component the clauseValue is part of
 	 */
 	public HashMap<ClauseValue, Integer> stronglyConnectedComponents(DirectedGraph graph) {
 		// debugPrint("graph:" + graph.getGraph().toString());//DEBUG
