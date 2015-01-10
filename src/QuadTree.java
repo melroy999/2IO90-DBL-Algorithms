@@ -1,25 +1,31 @@
-
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Random;
 
 public class QuadTree {
 
-	private int MAX_OBJECTS = 2;
-	private int MAX_LEVELS = 5;
+	private int MAX_OBJECTS;
+	private int MAX_LEVELS;
 	private int level;
 	private ArrayList<Label> elements;
 	public Rectangle2D bounds;
 	private QuadTree[] nodes;
+	private boolean a;
 	//private Random r = new Random();
 	
-	public QuadTree(int l, Rectangle2D b){
-		
+	public QuadTree(int l, Rectangle2D b, boolean a){
+		this.a = a;
+		if(a){
+			MAX_OBJECTS = 5;
+			MAX_LEVELS = 200;
+		}
+		else{
+			MAX_OBJECTS = 20;
+			MAX_LEVELS = 20;
+		}
 		level = l;
 		bounds = b;
-		
-		
-		
+
 		//System.out.println(bounds);
 		
 		elements = new ArrayList<Label>();
@@ -49,8 +55,14 @@ public class QuadTree {
 	
 	public ArrayList<Label> retrieve(ArrayList<Label> returnObjects, Label l) {
 		int index = getPos(l);
+		//System.out.println("retrieve: " + index + bounds);
 		if (index != -1 && nodes[0] != null) {
 			nodes[index].retrieve(returnObjects, l);
+			
+			
+		} else if(a && index == -1 && nodes[0] != null){
+			//retrieveAll(returnObjects);
+			for(int i = 0; i < 4; i++) nodes[i].retrieveAll(returnObjects);
 		}
 		
 		returnObjects.addAll(elements);
@@ -58,30 +70,59 @@ public class QuadTree {
 		return returnObjects;
 	}
 	
-	public void remove(Label l){
-		int pos = getPos(l);
-		if(pos == -1 || nodes[0] == null){
-			Point a = l.getBoundPoint();
-			for(int i = 0; i < elements.size(); i++){
-				Point b = elements.get(i).getBoundPoint();
-				if(a == b) elements.remove(i); 
+	public ArrayList<Label> retrieveAll(ArrayList<Label> returnObjects){
+		if(nodes[0] != null){
+			for(int i = 0; i < 4; i++){
+				nodes[i].retrieveAll(returnObjects);
 			}
-			//l.setHasIntersect(false);
-			elements.remove(l);
+		}
+		returnObjects.addAll(elements);
+		return returnObjects;
+	}
+	
+	
+	
+	
+	boolean print = !true;
+	public void remove(Label l){
+		if (print) System.out.println("to remove: " + l);	
+		int pos = getPos(l);
+		if (print)System.out.println("pos: " + pos);	
+		if(pos == -1 || nodes[0] == null){
+			if (print){
+				System.out.print("Elements contained:");
+				for(int i = 0; i < elements.size(); i++){
+					System.out.print(elements.get(i) + " ");
+				}
+				System.out.println();
+			}
+			PosPoint a = l.getBoundPoint();
+			for(int i = 0; i < elements.size(); i++){
+				
+				PosPoint b = elements.get(i).getBoundPoint();
+				if(a.getX() == b.getX() && a.getY() == b.getY()) {
+					if(print) System.out.println("match");
+					elements.remove(i); 
+				}
+			}
+			
+			if (print){
+				System.out.print("Elements contained:");
+				for(int i = 0; i < elements.size(); i++){
+					System.out.print(elements.get(i) + " ");
+				}
+				System.out.println();
+			}
+			
+			//l.hasIntersect = false;
+			//elements.remove(l);
 		}
 		else {
 			nodes[pos].remove(l);
 		}
 	}
 	
-	public void updateLabel(Label l, double height, double ratio){
-		//System.out.println("lChanged1: " + l.isHasIntersect());
-		remove(l);
-		//System.out.println("lChanged2: " + l.isHasIntersect());
-		insertNew(l,height,ratio);
-		//System.out.println("lChanged3: " + l.isHasIntersect());
-		//System.out.println("height will instert: " + height);
-	}
+	
 	
 	/**
 	 * 
@@ -96,9 +137,14 @@ public class QuadTree {
         double right = l.getBoundPoint().getX() + (height * ratio * l.getShift());
         double left = right - (height * ratio);
             
-        Rectangle2D rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+        Rectangle2D.Double rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+        
+        
+        //System.out.println("rect: : " + rect);
+        
+        
         l.setRect(rect);
-        this.insert(l);
+        insert(l);
 	}
 	
 	private void insert(Label l){
@@ -148,10 +194,10 @@ public class QuadTree {
 		
 		//System.out.println("SPLIT ON  " + x + ", " + y + " until " + (x + 2 * subWidth) + " , " + (y + 2 * subHeight));
 		
-		nodes[0] = new QuadTree(level+1, new Rectangle2D.Double(x + subWidth, y, subWidth, subHeight));
-		nodes[1] = new QuadTree(level+1, new Rectangle2D.Double(x, y, subWidth, subHeight));
-		nodes[2] = new QuadTree(level+1, new Rectangle2D.Double(x, y + subHeight, subWidth, subHeight));
-		nodes[3] = new QuadTree(level+1, new Rectangle2D.Double(x + subWidth, y + subHeight, subWidth, subHeight));
+		nodes[0] = new QuadTree(level+1, new Rectangle2D.Double(x + subWidth, y, subWidth, subHeight),a);
+		nodes[1] = new QuadTree(level+1, new Rectangle2D.Double(x, y, subWidth, subHeight),a);
+		nodes[2] = new QuadTree(level+1, new Rectangle2D.Double(x, y + subHeight, subWidth, subHeight),a);
+		nodes[3] = new QuadTree(level+1, new Rectangle2D.Double(x + subWidth, y + subHeight, subWidth, subHeight),a);
 	}
 	
 	
@@ -180,7 +226,32 @@ public class QuadTree {
             double right = l.getBoundPoint().getX() + (vSize * ratio * l.getShift());
             double left = right - (vSize * ratio);
             
-            Rectangle2D rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+            Rectangle2D.Double rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+            l.setRect(rect);
+            this.insert(l);
+            
+    	}
+    	//.toString();
+    	//
+    	
+	}
+	
+	public void init(ArrayList<Label> labels, double vSize, double ratio, int rangeX, int rangeY){
+		this.empty();
+		
+		
+		this.bounds = new Rectangle2D.Double(0 - vSize * ratio,0 - vSize,rangeX + (2 * vSize * ratio),rangeY + (2 * vSize));
+    	
+		for (Label l: labels) l.setHasIntersect(false);
+    	for (int i = 0; i < labels.size(); i++) {
+    		Label l = labels.get(i);
+    		l.setHasIntersect(false);
+    		double top = l.getBoundPoint().getY() + (l.isTop() ? vSize : 0);
+            double bottom = top - vSize;
+            double right = l.getBoundPoint().getX() + (vSize * ratio * l.getShift());
+            double left = right - (vSize * ratio);
+            
+            Rectangle2D.Double rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
             l.setRect(rect);
             this.insert(l);
             
@@ -202,7 +273,7 @@ public class QuadTree {
             double right = l.getBoundPoint().getX() + (vSize * ratio * l.getShift());
             double left = right - (vSize * ratio);
             
-            Rectangle2D rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+            Rectangle2D.Double rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
             l.setRect(rect);
             this.insert(l);
             
@@ -222,7 +293,7 @@ public class QuadTree {
 		Rectangle2D pRect = l.getRect();
 		//System.out.println(pRect);
 		int index = -1;
-		double verticalMidpoint = bounds.getX() + (bounds.getWidth() / 2.0);
+		double verticalMidpoint = bounds.getX() + (bounds.getWidth() / 2.0d);
 		double horizontalMidpoint = bounds.getY() + (bounds.getHeight() / 2.0d);
 	   
 		//drawPoint(new Vector2f((double)verticalMidpoint,(double)horizontalMidpoint), 0.05f, Color.WHITE);

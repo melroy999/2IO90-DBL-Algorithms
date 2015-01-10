@@ -7,7 +7,7 @@ public class Label {
 	private boolean hasIntersect = false;
 	// public Vector2i boundPoint;
 	private PosPoint boundPoint;
-	private Rectangle2D rect;
+	private Rectangle2D.Double rect;
 	private boolean viable;
 	private int index;
 
@@ -31,7 +31,7 @@ public class Label {
 	public Label(Label l){
 		this.boundPoint = l.getBoundPoint();
 		this.shift = l.getShift();
-		this.top = l.top;
+		this.top = l.isTop();
 		this.viable = l.viable;
 	}
 	
@@ -164,7 +164,7 @@ public class Label {
 		return rect;
 	}
 
-	public void setRect(Rectangle2D rect) {
+	public void setRect(Rectangle2D.Double rect) {
 		this.rect = rect;
 	}
 

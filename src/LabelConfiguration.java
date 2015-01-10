@@ -24,7 +24,7 @@ public class LabelConfiguration {
             double right = l.getBoundPoint().getX() + (height * ratio * l.getShift());
             double left = right - (height * ratio);
             
-            Rectangle2D rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+            Rectangle2D.Double rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
             l.setRect(rect);
             
             
