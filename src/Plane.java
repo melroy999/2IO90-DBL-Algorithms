@@ -38,7 +38,7 @@ public class Plane {
 
 
 	private double delta = 0.001;// difference of border
-	private boolean debug = !true;
+	private boolean debug = true;
 
 	public Plane(double aspectRatio, SliderPoint[] points, PlacementModel pModel) {
 		this.aspectRatio = aspectRatio;
@@ -1551,8 +1551,13 @@ public class Plane {
 	}
 
 	public void checkFinalSolution() throws Exception {
-		labels = new Label[numberOfPoints];
-		if (pModel == PlacementModel.ONESLIDER) {
+		if(pModel == PlacementModel.FOURPOS){
+			
+		}
+		
+		
+		else if (pModel == PlacementModel.ONESLIDER) {
+			labels = new Label[numberOfPoints];
 			for (int i = 0; i < labels.length; i++) {
 				SliderPoint s = sliderPoints[i];
 				PosPoint p = new PosPoint(s.getX(), s.getY());
@@ -1560,6 +1565,7 @@ public class Plane {
 				labels[i] = l;
 			}
 		} else {
+			labels = new Label[numberOfPoints];
 			for (int i = 0; i < labels.length; i++) {
 				PosPoint p = posPoints[i];
 				Orientation o = p.getPosition();
@@ -1631,6 +1637,7 @@ public class Plane {
 		/*
 		 * if(amount > 0){ System.out.println(intersecting); }
 		 */
+		
 		return amount;
 	}
 }
