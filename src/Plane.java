@@ -81,8 +81,6 @@ public class Plane {
 		height = maxHeight;// height to use initially is the max height.
 		double lastHeight = 0;// a value to find out if you are checking for the same height twice in succession.
 
-		ArrayList<Label> allLabels = new ArrayList<Label>();// all labels will be stored in this arrayList, will be copied later after each iteration.
-
 		clauseToPoint = new HashMap<ClauseValue, PosPoint>();// make a new mapping connecting clauseValues with points.
 
 		rangeX = posPoints[xSortedOrder[xSortedOrder.length - 1]].getX();
@@ -94,85 +92,6 @@ public class Plane {
 			if (p.getY() > rangeY) {
 				rangeY = p.getY();
 			}
-
-			if (i > 0) {
-				if (i < posPoints.length - 1) {
-					int indexToRight = i - 1;
-					boolean clean = true;
-					while (indexToRight <= posPoints.length - 1 && clean
-							&& posPoints[xSortedOrder[indexToRight]].getX() - p.getX() < 2 * maxHeight * aspectRatio) {
-						int difY = posPoints[xSortedOrder[indexToRight]].getY() - p.getY();
-						if (difY < maxHeight && difY >= 0) {
-							clean = false;
-							break;
-						}
-						indexToRight++;
-					}
-
-					if (!clean) {
-						Label NE = new Label(p, 1, true);
-						allLabels.add(NE);// shift=1 and top=true gives us the NE label;
-						clauseToPoint.put(NE.toClause(), p);
-
-						Label NW = new Label(p, 0, true);
-						allLabels.add(NW);// shift=1 and top=true gives us the NE label;
-						clauseToPoint.put(NW.toClause(), p);
-
-						clean = true;
-					} else {
-						p.setPosition(Orientation.NE);
-					}
-
-					if (!clean) {
-						int indexToLeft = i - 1;
-						clean = true;
-
-						while (indexToLeft >= 0 && clean && p.getX() - posPoints[xSortedOrder[indexToLeft]].getX() < 2 * maxHeight * aspectRatio) {
-							int difY = posPoints[xSortedOrder[indexToLeft]].getY() - p.getY();
-							if (difY < maxHeight && difY >= 0) {
-								clean = false;
-								break;
-							}
-							indexToLeft--;
-						}
-
-						if (!clean) {
-							Label NE = new Label(p, 1, true);
-							allLabels.add(NE);// shift=1 and top=true gives us the NE label;
-							clauseToPoint.put(NE.toClause(), p);
-
-							Label NW = new Label(p, 0, true);
-							allLabels.add(NW);// shift=1 and top=true gives us the NE label;
-							clauseToPoint.put(NW.toClause(), p);
-						} else {
-							p.setPosition(Orientation.NW);
-						}
-					}
-				} else {// i = posPoints.length-1
-					Label NE = new Label(p, 1, true);
-					allLabels.add(NE);// shift=1 and top=true gives us the
-										// NE label;
-					clauseToPoint.put(NE.toClause(), p);
-		
-					Label NW = new Label(p, 0, true);
-					allLabels.add(NW);// shift=1 and top=true gives us the NE label;
-					clauseToPoint.put(NW.toClause(), p);
-					
-					//p.setPosition(Orientation.NE);
-				}
-			} else {// i==0
-				Label NE = new Label(p, 1, true);
-				allLabels.add(NE);// shift=1 and top=true gives us the
-									// NE label;
-				clauseToPoint.put(NE.toClause(), p);
-	
-				Label NW = new Label(p, 0, true);
-				allLabels.add(NW);// shift=1 and top=true gives us the NE label;
-				clauseToPoint.put(NW.toClause(), p);
-				
-				//p.setPosition(Orientation.NW);
-			}
-
 		}
 
 		QuadTree quad = new QuadTree(0, new Rectangle(0, 0, rangeX + 1, rangeY + 1));// new quadtree with (top) level 0 and dimensions (range+1)^2
@@ -185,8 +104,97 @@ public class Plane {
 										// the last checked height
 			debugPrint("Height: " + height + " lastHeight: " + lastHeight + " minHeight: " + minHeight + " maxHeight: " + maxHeight);
 			HashMap<PosPoint, Orientation> validOrientation = new HashMap<PosPoint, Orientation>();
-			ArrayList<Label> labels = new ArrayList<Label>(allLabels);// all labels will be stored in this arrayList.
+			ArrayList<Label> labels = new ArrayList<Label>();// all labels will be stored in this arrayList.
 
+			for (int i = 0; i < xSortedOrder.length; i++) {// make the top labels for all points.
+				int pointer = xSortedOrder[i];
+				PosPoint p = posPoints[pointer];
+
+				if (p.getY() > rangeY) {
+					rangeY = p.getY();
+				}
+
+				if (i > 0) {
+					if (i < posPoints.length - 1) {
+						int indexToRight = i - 1;
+						boolean clean = true;
+						while (indexToRight <= posPoints.length - 1 && clean
+								&& posPoints[xSortedOrder[indexToRight]].getX() - p.getX() < 2 * height * aspectRatio) {
+							int difY = posPoints[xSortedOrder[indexToRight]].getY() - p.getY();
+							if (difY < height && difY >= 0) {
+								clean = false;
+								break;
+							}
+							indexToRight++;
+						}
+
+						if (!clean) {
+							Label NE = new Label(p, 1, true);
+							labels.add(NE);// shift=1 and top=true gives us the NE label;
+							clauseToPoint.put(NE.toClause(), p);
+
+							Label NW = new Label(p, 0, true);
+							labels.add(NW);// shift=1 and top=true gives us the NE label;
+							clauseToPoint.put(NW.toClause(), p);
+
+							clean = true;
+						} else {
+							p.setPosition(Orientation.NE);
+						}
+
+						if (!clean) {
+							int indexToLeft = i - 1;
+							clean = true;
+
+							while (indexToLeft >= 0 && clean && p.getX() - posPoints[xSortedOrder[indexToLeft]].getX() < 2 * height * aspectRatio) {
+								int difY = posPoints[xSortedOrder[indexToLeft]].getY() - p.getY();
+								if (difY < height && difY >= 0) {
+									clean = false;
+									break;
+								}
+								indexToLeft--;
+							}
+
+							if (!clean) {
+								Label NE = new Label(p, 1, true);
+								labels.add(NE);// shift=1 and top=true gives us the NE label;
+								clauseToPoint.put(NE.toClause(), p);
+
+								Label NW = new Label(p, 0, true);
+								labels.add(NW);// shift=1 and top=true gives us the NE label;
+								clauseToPoint.put(NW.toClause(), p);
+							} else {
+								p.setPosition(Orientation.NW);
+							}
+						}
+					} else {// i = posPoints.length-1
+						Label NE = new Label(p, 1, true);
+						labels.add(NE);// shift=1 and top=true gives us the
+											// NE label;
+						clauseToPoint.put(NE.toClause(), p);
+			
+						Label NW = new Label(p, 0, true);
+						labels.add(NW);// shift=1 and top=true gives us the NE label;
+						clauseToPoint.put(NW.toClause(), p);
+						
+						//p.setPosition(Orientation.NE);
+					}
+				} else {// i==0
+					Label NE = new Label(p, 1, true);
+					labels.add(NE);// shift=1 and top=true gives us the
+										// NE label;
+					clauseToPoint.put(NE.toClause(), p);
+		
+					Label NW = new Label(p, 0, true);
+					labels.add(NW);// shift=1 and top=true gives us the NE label;
+					clauseToPoint.put(NW.toClause(), p);
+					
+					//p.setPosition(Orientation.NW);
+				}
+
+			}
+			
+			
 			// the additional clauses are required to fix the value of a dead
 			// label to the negation of the clauseValue of that label.
 			long time = System.nanoTime();
@@ -1112,6 +1120,7 @@ public class Plane {
 	 *            , the height of the labels to check for.
 	 * @return a hashmap of all labels to an arraylist of labels they collide with. null if a dead point exists.
 	 */
+	
 	public ArrayList<Clause> findCollisions2pos(ArrayList<Label> labels, HashMap<PosPoint, Orientation> validOrientation, QuadTree tree, double height) {
 		ArrayList<Clause> clauses = new ArrayList<Clause>();
 		// long time = System.nanoTime();
