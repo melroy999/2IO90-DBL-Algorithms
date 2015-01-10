@@ -50,11 +50,13 @@ public class MapLabeler {
 	public static long max2SatTimeLoop = 0;//
 	
 	public static long startTime = 0;
+	
+	int repeat = 10;
 
 	public MapLabeler() throws IOException{
 		pModel = PlacementModel.FOURPOS;
 		String testing = "4pos";
-		File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v2.csv");
+		File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v"+System.currentTimeMillis()+".csv");
 		outputFile.createNewFile();
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 		String s = "";
@@ -66,7 +68,7 @@ public class MapLabeler {
 			s = "";
 		}
 		else{
-			s = "test_nr ; maxHeight; realHeight; maxHeightTime; initTime; avgColTime; maxColTime; totalAvgColTime; totalMaxColTime"
+			s = "test_nr; maxHeight; realHeight; maxHeightTime; initTime; avgColTime; maxColTime; totalAvgColTime; totalMaxColTime"
 					+"; nrOfLoops; finalCheckTime; averageRunningTime";
 		}
 		writer.write(s);
@@ -92,7 +94,7 @@ public class MapLabeler {
 				totalMax2SatTime = 0;//
 				input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
 				output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
-				for(int iteration = 0; iteration < 10; iteration++){
+				for(int iteration = 0; iteration < repeat; iteration++){
 					avgColTimeLoop = 0;
 					maxColTimeLoop = 0;
 					avg2SatTimeLoop = 0;
@@ -143,16 +145,16 @@ public class MapLabeler {
 						maxColTime = maxColTimeLoop;
 					}
 				}
-				maxHeightTime /= 10;
-				initTime /= 10;
-				avgColTime /= 10;
-				avg2SatTime /= 10;
-				nrOfLoops /= 10;
-				placementTime /= 10;
-				finalCheckTime /= 10;
-				averageRunningTime /= 10;
-				totalAvgColTime /= 10;//
-				totalAvg2SatTime /= 10;//
+				maxHeightTime /= repeat;
+				initTime /= repeat;
+				avgColTime /= repeat;
+				avg2SatTime /= repeat;
+				nrOfLoops /= repeat;
+				placementTime /= repeat;
+				finalCheckTime /= repeat;
+				averageRunningTime /= repeat;
+				totalAvgColTime /= repeat;//
+				totalAvg2SatTime /= repeat;//
 								
 				if(pModel == PlacementModel.TWOPOS){
 					s = ""+points+"_"+test+";"+maxHeight+";"+realHeight+";"+round(maxHeightTime)+";"+round(initTime)+";"+round(avgColTime)+";"+round(maxColTime)+";"+round(totalAvgColTime)+";"+round(totalMaxColTime)
@@ -180,18 +182,6 @@ public class MapLabeler {
 		d /= 10d;
 		return d;
 	}
-
-	private double calculateAverage(List <Long> marks) {
-		long sum = 0;
-		if(!marks.isEmpty()) {
-			for (long mark : marks) {
-				sum += mark;
-			}
-			return (double)sum / marks.size();
-		}
-		return sum;
-	}
-
 
 	public void readInput() throws Exception{
 		sc.useLocale(Locale.US);

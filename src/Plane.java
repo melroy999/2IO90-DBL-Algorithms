@@ -85,14 +85,73 @@ public class Plane {
 
 		clauseToPoint = new HashMap<ClauseValue, PosPoint>();//make a new mapping connecting clauseValues with points.
 
-		for(PosPoint p :posPoints){//make the top labels for all points.
-			Label NE = new Label(p, 1, true);
-			allLabels.add(NE);//shift=1 and top=true gives us the NE label;
-			clauseToPoint.put((NE).toClause(), p);
-
-			Label NW = new Label(p, 0, true);
-			allLabels.add(NW);//shift=1 and top=true gives us the NE label;
-			clauseToPoint.put((NW).toClause(), p);
+		for(int i = 0 ; i < xSortedOrder.length; i++){//make the top labels for all points.
+			int pointer = xSortedOrder[i];
+			PosPoint p = posPoints[pointer];
+			if(i > 0){
+				if(i < posPoints.length-1){
+					int indexToRight = i - 1;
+					boolean clean = true;
+					while(indexToRight <= posPoints.length-1 && clean && posPoints[xSortedOrder[indexToRight]].getX()-p.getX()<2*maxHeight*aspectRatio){
+						int difY = posPoints[xSortedOrder[indexToRight]].getY()-p.getY();
+						if(difY < maxHeight && difY >= 0){
+							clean = false;
+							break;
+						}
+						indexToRight++;
+					}
+					
+					if(!clean){
+						Label NE = new Label(p, 1, true);
+						allLabels.add(NE);//shift=1 and top=true gives us the NE label;
+						clauseToPoint.put(NE.toClause(), p);
+						
+						Label NW = new Label(p, 0, true);
+						allLabels.add(NW);//shift=1 and top=true gives us the NE label;
+						clauseToPoint.put(NW.toClause(), p);
+						
+						clean = true;
+					}
+					else {
+						p.setPosition(Orientation.NE);
+					}
+					
+					int indexToLeft = i - 1;
+					
+					if(!clean){
+						clean = true;
+						
+						while(indexToLeft >= 0 && clean && p.getX()-posPoints[xSortedOrder[indexToLeft]].getX()<2*maxHeight*aspectRatio){
+							int difY = posPoints[xSortedOrder[indexToLeft]].getY()-p.getY();
+							if(difY< maxHeight && difY >= 0){
+								clean = false;
+								break;
+							}
+							indexToLeft--;
+						}
+						
+						if(!clean){
+							Label NE = new Label(p, 1, true);
+							allLabels.add(NE);//shift=1 and top=true gives us the NE label;
+							clauseToPoint.put(NE.toClause(), p);
+							
+							Label NW = new Label(p, 0, true);
+							allLabels.add(NW);//shift=1 and top=true gives us the NE label;
+							clauseToPoint.put(NW.toClause(), p);
+						}
+						else {
+							p.setPosition(Orientation.NW);
+						}
+					}		
+				}
+				else {//i = posPoints.length-1
+					p.setPosition(Orientation.NE);
+				}
+			}
+			else {//i==0
+				p.setPosition(Orientation.NW);
+			}
+			
 		}
 
 		int loops = 0;
@@ -106,7 +165,7 @@ public class Plane {
 			
 			//the additional clauses are required to fix the value of a dead label to the negation of the clauseValue of that label.
 			long time = System.nanoTime();
-			HashMap<Label, ArrayList<Label>> collisions = findCollisions2pos(labels, validOrientation, quad, height);
+			ArrayList<Clause> collisions = findCollisions2pos(labels, validOrientation, quad, height);
 			
 			long collisionTime = (System.nanoTime()-time);
 			MapLabeler.avgColTimeLoop += collisionTime;
@@ -116,25 +175,16 @@ public class Plane {
 			//get the list of collisions	
 
 			time = System.nanoTime();
-			if (collisions!=null){//collisions will return null if a point with only dead labels exists
-				if(checkTwoSatisfiability(getClauses(collisions))){//if a satisfiable configuration exists
-					if(minHeight <= height){
-						minHeight = height;//this height will be valid, so the minimum height becomes this height.
-						debugPrint("2-Sat satisfies.");
-					}
-				}
-				else{//if no solution can be found with 2-sat
-					if(maxHeight > height){
-						maxHeight = height;
-						debugPrint("2-Sat is not satisfactory.");
-					}
-					//this height has no solution, so the maximum found height for which this does not work is now height
+			if(checkTwoSatisfiability(collisions)){//if a satisfiable configuration exists
+				if(minHeight <= height){
+					minHeight = height;//this height will be valid, so the minimum height becomes this height.
+					debugPrint("2-Sat satisfies.");
 				}
 			}
-			else {//if a point has only dead labels
+			else{//if no solution can be found with 2-sat
 				if(maxHeight > height){
 					maxHeight = height;
-					debugPrint("A label is dead.");
+					debugPrint("2-Sat is not satisfactory.");
 				}
 				//this height has no solution, so the maximum found height for which this does not work is now height
 			}
@@ -901,8 +951,8 @@ public class Plane {
 	 * @param height, the height of the labels to check for.
 	 * @return a hashmap of all labels to an arraylist of labels they collide with. null if a dead point exists.
 	 */
-	public HashMap<Label, ArrayList<Label>> findCollisions2pos(ArrayList<Label> labels, HashMap<PosPoint, Orientation> validOrientation, QuadTree tree, double height){			
-		HashMap<Label, ArrayList<Label>> collisions = new HashMap<Label, ArrayList<Label>>();//make a new hashmap of labels to arraylist of labels
+	public ArrayList<Clause> findCollisions2pos(ArrayList<Label> labels, HashMap<PosPoint, Orientation> validOrientation, QuadTree tree, double height){			
+		ArrayList<Clause> clauses = new ArrayList<Clause>();
 		//long time = System.nanoTime();
 		tree.init(labels, height, aspectRatio, 10000);//now only use the leftover labels
 		//System.out.println("initialisation:" + (System.nanoTime()-time));
@@ -914,11 +964,12 @@ public class Plane {
 			//long time2 = System.nanoTime();
 			overlap = findIntersectionQuad(tree, l);//find the labels this label intersects with
 			//System.out.println("findIntersectionQuad: " + (System.nanoTime()-time2));
-			
-			collisions.put(l, overlap);//put them in the mapping
+			for(Label l2 : overlap){
+				clauses.add(new Clause(l.toClause().negation(), l2.toClause().negation()));
+			}
 		}
 		//System.out.println("fullDetection: " + (System.nanoTime()-time));
-		return collisions;//return the list of collisions
+		return clauses;//return the list of collisions
 	}	
 
 	/**
@@ -952,17 +1003,6 @@ public class Plane {
 	 * @param collisions: list of all collisions found by the findCollisions method.
 	 * @return returns the clauses generated by converting the collisions to clauses.
 	 */
-	public ArrayList<Clause> getClauses(HashMap<Label, ArrayList<Label>> collisions){
-		ArrayList<Clause> newClauses = new ArrayList<Clause>();//the arraylist that will be returned
-		for(Label l:collisions.keySet()){//for all labels (as keys) in the mapping
-			for(Label lb:collisions.get(l)){//for the labels the above label intersects with
-				newClauses.add(new Clause(l.toClause().negation(), lb.toClause().negation()));
-				//add the negation of the associated clausevalues to the arraylist.
-				//see literature for explanation.
-			}
-		}
-		return newClauses;//return the clauses
-	}
 
 	public double getAspectRatio() {
 		return aspectRatio;
