@@ -1,25 +1,31 @@
-
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Random;
 
 public class QuadTree {
 
-	private int MAX_OBJECTS = 5;
-	private int MAX_LEVELS = 200;
+	private int MAX_OBJECTS;
+	private int MAX_LEVELS;
 	private int level;
 	private ArrayList<Label> elements;
 	public Rectangle2D bounds;
 	private QuadTree[] nodes;
+	private boolean a;
 	//private Random r = new Random();
 	
-	public QuadTree(int l, Rectangle2D b){
-		
+	public QuadTree(int l, Rectangle2D b, boolean a){
+		this.a = a;
+		if(a){
+			MAX_OBJECTS = 5;
+			MAX_LEVELS = 200;
+		}
+		else{
+			MAX_OBJECTS = 20;
+			MAX_LEVELS = 20;
+		}
 		level = l;
 		bounds = b;
-		
-		
-		
+
 		//System.out.println(bounds);
 		
 		elements = new ArrayList<Label>();
@@ -54,7 +60,7 @@ public class QuadTree {
 			nodes[index].retrieve(returnObjects, l);
 			
 			
-		} else if(index == -1 && nodes[0] != null){
+		} else if(a && index == -1 && nodes[0] != null){
 			//retrieveAll(returnObjects);
 			for(int i = 0; i < 4; i++) nodes[i].retrieveAll(returnObjects);
 		}
@@ -188,10 +194,10 @@ public class QuadTree {
 		
 		//System.out.println("SPLIT ON  " + x + ", " + y + " until " + (x + 2 * subWidth) + " , " + (y + 2 * subHeight));
 		
-		nodes[0] = new QuadTree(level+1, new Rectangle2D.Double(x + subWidth, y, subWidth, subHeight));
-		nodes[1] = new QuadTree(level+1, new Rectangle2D.Double(x, y, subWidth, subHeight));
-		nodes[2] = new QuadTree(level+1, new Rectangle2D.Double(x, y + subHeight, subWidth, subHeight));
-		nodes[3] = new QuadTree(level+1, new Rectangle2D.Double(x + subWidth, y + subHeight, subWidth, subHeight));
+		nodes[0] = new QuadTree(level+1, new Rectangle2D.Double(x + subWidth, y, subWidth, subHeight),a);
+		nodes[1] = new QuadTree(level+1, new Rectangle2D.Double(x, y, subWidth, subHeight),a);
+		nodes[2] = new QuadTree(level+1, new Rectangle2D.Double(x, y + subHeight, subWidth, subHeight),a);
+		nodes[3] = new QuadTree(level+1, new Rectangle2D.Double(x + subWidth, y + subHeight, subWidth, subHeight),a);
 	}
 	
 	
