@@ -54,8 +54,8 @@ public class MapLabeler {
 	int repeat = 10;
 
 	public MapLabeler() throws IOException{
-		pModel = PlacementModel.FOURPOS;
-		String testing = "4pos";
+		pModel = PlacementModel.TWOPOS;
+		String testing = "2pos";
 		File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v"+System.currentTimeMillis()+".csv");
 		outputFile.createNewFile();
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
@@ -68,14 +68,15 @@ public class MapLabeler {
 			s = "";
 		}
 		else{
-			s = "test_nr; maxHeight; realHeight; maxHeightTime; initTime; avgColTime; maxColTime; totalAvgColTime; totalMaxColTime"
-					+"; nrOfLoops; finalCheckTime; averageRunningTime";
+			s = "test_nr; maxHeight; realHeight; maxHeightTime; initTime; totalAvgColTime; totalMaxColTime"
+					+"; nrOfLoops; averageRunningTime";
 		}
 		writer.write(s);
 		writer.newLine();
-		for(int points = 100; points <= 100; points += 100){
+		for(int points = 10000; points <= 10000; points += 100){
 			System.out.println(points);
 			for(int test = 1; test <= 10; test++){
+				//System.out.println(test);
 				maxHeight = 0;
 				realHeight = 0;
 				maxHeightTime = 0;
@@ -126,6 +127,9 @@ public class MapLabeler {
 						catch(Exception e){
 							System.out.println(test + ";" + iteration);
 							e.printStackTrace();
+							while(true){
+								
+							}
 						}
 					}
 					averageRunningTime += (System.nanoTime()-startTime);
@@ -162,8 +166,8 @@ public class MapLabeler {
 
 				}
 				else if(pModel == PlacementModel.ONESLIDER){
-					s = ""+points+"_"+test+";"+maxHeight+";"+realHeight+";"+round(maxHeightTime)+";"+round(initTime)+";"+round(avgColTime)+";"+round(maxColTime)+";"+round(totalAvgColTime)+";"+round(totalMaxColTime)
-							+";"+nrOfLoops+";"+round(finalCheckTime)+";"+round(averageRunningTime);
+					s = ""+points+"_"+test+";"+maxHeight+";"+realHeight+";"+round(maxHeightTime)+";"+round(initTime)+";"+round(totalAvgColTime)+";"+round(totalMaxColTime)
+							+";"+nrOfLoops+";"+round(averageRunningTime);
 				}
 				else{
 					s = "";
