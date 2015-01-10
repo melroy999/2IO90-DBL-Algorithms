@@ -348,7 +348,7 @@ public class Plane {
 	public Label[] find4PosSolutionSA(){
 		double coolingRate = 0.00003;
 		double initialTemp = 10000;
-		double initialHeight = 250;
+		//double initialHeight = 250;
 		
 		
 		int range = 10000;
@@ -362,7 +362,7 @@ public class Plane {
 		double minHeight = (aspectRatio < 1) ? 0.5 : (1/(2*aspectRatio));//minimal height	
 		//TODO Melroy: minimale height is een half keer de aspectratio de 2* moet er bij
 		//double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);//2x the maximal height, so that we start with the calculated max-height in the loop.
-		double maxHeight = initialHeight;
+		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);
 		
 		height = maxHeight;//height to use is the average of max and min height
 		double lastHeight = 0;
