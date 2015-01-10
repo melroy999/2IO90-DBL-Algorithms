@@ -54,8 +54,8 @@ public class MapLabeler {
 	int repeat = 10;
 
 	public MapLabeler() throws IOException{
-		pModel = PlacementModel.FOURPOS;
-		String testing = "4pos";
+		pModel = PlacementModel.TWOPOS;
+		String testing = "2pos";
 		File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v"+System.currentTimeMillis()+".csv");
 		outputFile.createNewFile();
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
@@ -73,7 +73,7 @@ public class MapLabeler {
 		}
 		writer.write(s);
 		writer.newLine();
-		for(int points = 100; points <= 100; points += 100){
+		for(int points = 10000; points <= 10000; points += 100){
 			System.out.println(points);
 			for(int test = 1; test <= 10; test++){
 				maxHeight = 0;

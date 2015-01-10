@@ -24,6 +24,9 @@ public class Plane {
 	private int numberOfPoints;
 	private double height;
 	private PlacementModel pModel;
+	
+	int rangeX = 0;
+	int rangeY = 0;
 
 	private HashMap<ClauseValue, Integer> connectedComponents;//saves the connected component number the clauseValue is part of.
 	private DirectedGraph minGraph;//saves the graph of the iteration with a solvable situation.
@@ -66,8 +69,7 @@ public class Plane {
 	public PosPoint[] find2PosSolution(){
 		int[] xSortedOrder = MergeSort.sort(posPoints);//sorting the points on x-cor, referencing by index in this array.
 
-		int range = 10000;//the range of the coordinates from 0 to range
-		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range+1,range+1));//new quadtree with (top) level 0 and dimensions (range+1)^2
+		//int range = 10000;//the range of the coordinates from 0 to range
 
 
 		double minHeight = (aspectRatio <= 1) ? 1d : (1d/(2d*aspectRatio));//minimal height
@@ -85,9 +87,16 @@ public class Plane {
 
 		clauseToPoint = new HashMap<ClauseValue, PosPoint>();//make a new mapping connecting clauseValues with points.
 
+		rangeX = posPoints[xSortedOrder[xSortedOrder.length-1]].getX();
+		
 		for(int i = 0 ; i < xSortedOrder.length; i++){//make the top labels for all points.
 			int pointer = xSortedOrder[i];
 			PosPoint p = posPoints[pointer];
+			
+			if(p.getY()>rangeY){
+				rangeY = p.getY();
+			}
+			
 			if(i > 0){
 				if(i < posPoints.length-1){
 					int indexToRight = i - 1;
@@ -154,6 +163,8 @@ public class Plane {
 			
 		}
 
+		QuadTree quad = new QuadTree(0, new Rectangle(0,0,rangeX+1,rangeY+1));//new quadtree with (top) level 0 and dimensions (range+1)^2
+		
 		int loops = 0;
 		
 		MapLabeler.initTime += (System.nanoTime() - MapLabeler.startTime);
@@ -954,7 +965,7 @@ public class Plane {
 	public ArrayList<Clause> findCollisions2pos(ArrayList<Label> labels, HashMap<PosPoint, Orientation> validOrientation, QuadTree tree, double height){			
 		ArrayList<Clause> clauses = new ArrayList<Clause>();
 		//long time = System.nanoTime();
-		tree.init(labels, height, aspectRatio, 10000);//now only use the leftover labels
+		tree.init(labels, height, aspectRatio, rangeX, rangeY);//now only use the leftover labels
 		//System.out.println("initialisation:" + (System.nanoTime()-time));
 		//setIntersectionsQuad(tree, labels);//gives all labels the correct boolean value for intersection.
 
