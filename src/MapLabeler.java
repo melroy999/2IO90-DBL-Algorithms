@@ -10,7 +10,7 @@ import java.util.Scanner;
 /*
  * 2IO90 DBL Algorithms
  * This is the main class of the labeler software.
- * It reads input, let it process and outputs the solution
+ * It reads input, let it process and outputs the solution.
  * as specified in the problem description.
  */
 public class MapLabeler {
@@ -49,11 +49,11 @@ public class MapLabeler {
 	
 	public static long startTime = 0;
 	
-	int repeat = 10;
+	int repeat = 1;
 
 	public MapLabeler() throws IOException{
-		pModel = PlacementModel.TWOPOS;
-		String testing = "2pos";
+		pModel = PlacementModel.FOURPOS;
+		String testing = "4pos";
 		File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v"+System.currentTimeMillis()+".csv");
 		outputFile.createNewFile();
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
@@ -73,7 +73,7 @@ public class MapLabeler {
 		writer.newLine();
 		for(int points = 10000; points <= 10000; points += 100){
 			System.out.println(points);
-			for(int test = 1; test <= 10; test++){
+			for(int test = 1; test <= 1; test++){
 				//System.out.println(test);
 				maxHeight = 0;
 				realHeight = 0;
