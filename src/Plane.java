@@ -34,7 +34,7 @@ public class Plane {
 	private PosPoint[] posPoints;
 
 	private double delta = 0.001;//difference of border
-	private boolean debug = !true;
+	private boolean debug = true;
 
 	public Plane(double aspectRatio, SliderPoint[] points, PlacementModel pModel){
 		this.aspectRatio = aspectRatio;
@@ -336,11 +336,13 @@ public class Plane {
 			
 			LabelConfiguration current = new LabelConfiguration(posPoints, height, aspectRatio);
 			
-			
+			if(print) debugPrint("############################################################");
 			debugPrint("------>  height: " + height + " min " +minHeight + " max " + maxHeight);
+			if(print) debugPrint("############################################################");
+			if(print) debugPrint("");
 			
 			best = new LabelConfiguration(current.getLabels());
-			quad.init(current.getLabels(), height, aspectRatio, 10000);//initialize the quadtree
+			quad.init(current.getLabels(), height, aspectRatio, range);//initialize the quadtree
 			labels = current.getLabels();
 			
 			int currentEnergy = calculateScore(quad, Integer.MAX_VALUE, null, null, null);
@@ -360,104 +362,129 @@ public class Plane {
 				int position = (int) (newSolution.labelSize() * r.nextDouble());
 				
 				Label lChanged = newSolution.getLabels()[position];
+				if(print) System.out.print ("Initial: " + lChanged);
+				initial = lChanged.getOrientation();
+				
 				ArrayList<Label> before = getIntersections(quad,lChanged);
 				
-				ArrayList<Orientation> options = new ArrayList<Orientation>();
-				options.add(Orientation.NE);
-				options.add(Orientation.NW);
-				options.add(Orientation.SE);
-				options.add(Orientation.SW);
+				//if(before.size() != 0){
+					//skip already alive
 				
 				
-				
-				newSolution.change(position, options);
-				quad.updateLabel(lChanged, height, aspectRatio);
-				labels = current.getLabels();
-				ArrayList<Label> after = getIntersections(quad,lChanged);
-				
-				initial = newSolution.getLastFrom();
-				
-				int counter = 0;
-				from = initial;
-				to = newSolution.getLastTo();
-				boolean triedall = false;
-				while(!containsPoint2(after,lChanged, height).isEmpty()){
-					counter++;
-					if(options.size() == 0){
-						if(!triedall){
-							options.add(initial);
-							triedall = true;
+					
+					ArrayList<Orientation> options = new ArrayList<Orientation>();
+					options.add(Orientation.NE);
+					options.add(Orientation.NW);
+					options.add(Orientation.SE);
+					options.add(Orientation.SW);
+					
+					
+					quad.remove(lChanged);
+					newSolution.change(position, options);
+					
+					quad.insertNew(lChanged, height, aspectRatio);
+					labels = current.getLabels();
+					ArrayList<Label> after = getIntersections(quad,lChanged);
+					//if(print) debugPrint(" change to " + lChanged.getOrientation());
+					
+					
+					int counter = 0;
+					from = initial;
+					to = newSolution.getLastTo();
+					boolean triedall = false;
+					if(print) System.out.println (" from: " + newSolution.getLastFrom());
+					if(print) debugPrint("To: " + newSolution.getLastTo() + " " + containsPoint2(after,lChanged, height));
+					while(!containsPoint2(after,lChanged, height).isEmpty()){
+						counter++;
+						if(options.size() == 0){
+							if(!triedall){
+								options.add(initial);
+								triedall = true;
+							}
+							else {
+								debugPrint("AAAAAAAAAAAAAAAHHHH HEIGHT " + height + " NOT POSSIBLE");
+								bestEnergy = Integer.MAX_VALUE;
+								break simulatedAnnealing;
+							}
 						}
-						else {
-							debugPrint("AAAAAAAAAAAAAAAHHHH HEIGHT " + height + " NOT POSSIBLE");
-							bestEnergy = Integer.MAX_VALUE;
-							break simulatedAnnealing;
-						}
+						quad.remove(lChanged);
+						newSolution.change(position, options);
+						to = newSolution.getLastTo();
+						quad.insertNew(lChanged, height, aspectRatio);
+						
+						labels = current.getLabels();
+						after = getIntersections(quad,lChanged);
+						
+						if(print) debugPrint("To 2: " + newSolution.getLastTo() + " " + containsPoint2(after,lChanged, height));
+						
+						
 					}
 					
-					newSolution.change(position, options);
-					quad.updateLabel(lChanged, height, aspectRatio);
-					labels = current.getLabels();
-					after = getIntersections(quad,lChanged);
-				}
-				
-				
-				
-				
-				neighbourEnergy = calculateScore(quad, currentEnergy, lChanged, before, after);
-				
-				
-				
-				if(neighbourEnergy < bestEnergy){
-					labels = newSolution.getLabels();
-					//if(oldIntersect(false) != neighbourEnergy){
-						//System.out.println("Changed: " + lChanged);
+					
+					
+					
+					neighbourEnergy = calculateScore(quad, currentEnergy, lChanged, before, after);
+					
+					//int old = oldIntersect(false);
+					//if(old != neighbourEnergy){
+					//	if(print)debugPrint("fout: old " + old + " vs new " + neighbourEnergy);
 					//	oldIntersect(true);
 					//}
-				}
-				
-				if (calculateAcceptance(currentEnergy, neighbourEnergy, temp) > r.nextDouble()) {
-					current = newSolution;
-					currentEnergy = neighbourEnergy;
 					
-					//labels = newSolution.getLabels();
-					/*if(finalIntersectionTest(false) != currentEnergy){
-						
-						if(print)debugPrint("####################################################");
-						if(print)debugPrint("############  EN WEL GODVERDOMME  ##################");
-						if(print)debugPrint("####################################################");
-						
-						//labels = current
+					
+					
+					if(neighbourEnergy < bestEnergy){
 						labels = newSolution.getLabels();
-						if(print2) debugPrint(finalIntersectionTest(print) + "");
-						//ietsmeteentest(current.getLabels());
-						
-						if(print)debugPrint("");
-						
-					}*/
-					
-	            }
-				else {
-					if(print)debugPrint("    changeback################################################################################");
-					newSolution.changeBack(initial);
-					
-					for(int i = 0; i < changed.size(); i++){
-						Label l = changed.get(i);
-						boolean had = l.isHasIntersect();
-						l.setHasIntersect(!had);
+						//if(oldIntersect(false) != neighbourEnergy){
+							//System.out.println("Changed: " + lChanged);
+						//	oldIntersect(true);
+						//}
 					}
-					quad.updateLabel(lChanged, height, aspectRatio);
-					current = newSolution;
-				
-				}
-				
-				if (neighbourEnergy < bestEnergy) {
-					debugPrint("^new best: " + neighbourEnergy);
-					best = new LabelConfiguration(newSolution.getLabels());
-	                bestEnergy = neighbourEnergy;
-	            }
-				
-				temp *= 1-coolingRate;
+					
+					if (calculateAcceptance(currentEnergy, neighbourEnergy, temp) > r.nextDouble()) {
+						current = newSolution;
+						currentEnergy = neighbourEnergy;
+						
+						//labels = newSolution.getLabels();
+						/*if(finalIntersectionTest(false) != currentEnergy){
+							
+							if(print)debugPrint("####################################################");
+							if(print)debugPrint("############  EN WEL GODVERDOMME  ##################");
+							if(print)debugPrint("####################################################");
+							
+							//labels = current
+							labels = newSolution.getLabels();
+							if(print2) debugPrint(finalIntersectionTest(print) + "");
+							//ietsmeteentest(current.getLabels());
+							
+							if(print)debugPrint("");
+							
+						}*/
+						
+		            }
+					else {
+						if(print)debugPrint("    changeback");
+						quad.remove(lChanged);
+						newSolution.changeBack(initial);
+						
+						for(int i = 0; i < changed.size(); i++){
+							Label l = changed.get(i);
+							boolean had = l.isHasIntersect();
+							l.setHasIntersect(!had);
+						}
+						quad.insertNew(lChanged, height, aspectRatio);
+						current = newSolution;
+					
+					}
+					
+					if (neighbourEnergy < bestEnergy) {
+						debugPrint("^new best: " + neighbourEnergy);
+						best = new LabelConfiguration(newSolution.getLabels());
+		                bestEnergy = neighbourEnergy;
+		            }
+					
+					temp *= 1-coolingRate;
+				//}
 			}
 			}
 			
@@ -473,10 +500,12 @@ public class Plane {
 					
 				//}
 				//else {
+					
 					if(finalHeight < height){
 						finalBest = new LabelConfiguration(best.getLabels());
 						finalHeight = height;
 						debugPrint("NEW FINAL HEIGHT");
+						//break;
 					}
 					minHeight = height;
 				//}
@@ -490,9 +519,34 @@ public class Plane {
 			
 			
 			lastHeight = height;
-			height = (maxHeight+minHeight)/2;//height to use is the average of max and min height
-			double width = height * aspectRatio;
-			height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
+			//height = (maxHeight+minHeight)/2;//height to use is the average of max and min height
+			//double width = height * aspectRatio;
+			//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
+			
+			height = (maxHeight+minHeight)/2;//calculate the average of the maxHeight and minHeight
+			double width = height * aspectRatio;//calculate the width.
+
+			//debugPrint(">" + height + "," + width + ":" + roundToHalf(height) + "," + roundToHalf(width) + ":" + Math.abs(height-roundToHalf(height)) + "," + Math.abs(width-roundToHalf(width)));
+			
+			//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
+			
+			if(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))){
+				if(roundToHalf(height)<=maxHeight && roundToHalf(height) >= minHeight){
+					height = roundToHalf(height);
+				}
+				else{
+					height = roundToHalf(width)/aspectRatio;
+				}
+			}
+			else{
+				if(roundToHalf(width)/aspectRatio<=maxHeight && roundToHalf(width)/aspectRatio >= minHeight){
+					height = roundToHalf(width)/aspectRatio;
+				}
+				else{
+					height = roundToHalf(height);
+				}
+			}
+		
 		}
 		height = minHeight;
 		
@@ -523,7 +577,13 @@ public class Plane {
 			 PosPoint p = l.getBoundPoint();
 			 PosPoint p2 = l2.getBoundPoint();
 			 if(!p2.equals(p) && l.getRect().contains(l2.getX(),l2.getY())){//check if the point is in the label
-				 if(p.getX() != p2.getX() && p.getY() != p2.getY() && p.getX() != p2.getX() + height && p.getX() != p2.getX() - height && p.getY() != p2.getY() + height && p.getY() != p2.getY() - height){
+				 if(
+						 p.getX() != p2.getX() && 
+						 p.getY() != p2.getY() && 
+						 p.getX() != p2.getX() + height && 
+						 p.getX() != p2.getX() - height && 
+						 p.getY() != p2.getY() + height && 
+						 p.getY() != p2.getY() - height){
 				 contained.add(l2);//if so, add it to contained
 				 }
 			 }
@@ -596,6 +656,10 @@ public class Plane {
 			}
 			
 			if (!before.contains(lChanged)) { before.add(lChanged); }
+			
+			
+			
+			
 			if(print) System.out.print("      AFter : ");
 			for(int i = 0; i < after.size(); i++){
 				if(after.get(i).isHasIntersect()) if(print) System.out.print(after.get(i) + " ");
@@ -620,25 +684,29 @@ public class Plane {
 			
 			amount = amount - subtract;
 			
-			if(print) System.out.print("      Add    : ");
+			if(print) System.out.println("Size: " + before.size() + "   Add: ");
+			ArrayList<Label> returnObjects = new ArrayList<Label>();
+			
+			
 			
 			for(int i = 0; i < before.size(); i++){
 				Label l = before.get(i);
 				//if(!l.isHasIntersect()){
-					ArrayList<Label> returnObjects = new ArrayList<Label>();
+					returnObjects = new ArrayList<Label>();
 					quad.retrieve(returnObjects, l);
+					if(print) System.out.println("                     Retrieved for: " + l + ": " + returnObjects);
 					for(int j = 0; j < returnObjects.size(); j++){
 						Label label2 = returnObjects.get(j);
 						if(intersects(l, label2)){
 							if(!l.isHasIntersect()){
 								if(!add.contains(l)) add.add(l);
-								if(print) System.out.print(l + " ");
+								if(print) System.out.println("                               ADD: " + l + " ");
 								l.setHasIntersect(true);
 								amount++;
 							}
 							if(!label2.isHasIntersect()){
 								if(!add.contains(label2)) add.add(label2);
-								if(print) System.out.print(label2 + " ");
+								if(print) System.out.println("                               ADD: " + l + " ");
 								label2.setHasIntersect(true);
 								amount++;
 							}
@@ -647,6 +715,9 @@ public class Plane {
 				//}
 			}
 			
+			if(print) System.out.println();
+			if(print) System.out.print("   retrieved : ");
+			if(print) for(Label l: returnObjects) System.out.print(l + " ");
 			if(print) System.out.println();
 			
 			if(print) System.out.print("      Current: ");
@@ -696,7 +767,7 @@ public class Plane {
 		 return intersections;
 	 }
 	
-	/*
+	
 	public int oldIntersect(boolean print){
 		//boolean print = true;
 		//print = false;
@@ -721,7 +792,7 @@ public class Plane {
 		}
 		
 		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range,range));
-		quad.init(otherLabels, height, aspectRatio, 10000);//initialize the quadtree
+		quad.init(otherLabels, height, aspectRatio, range);//initialize the quadtree
 		
 		
 		ArrayList<Label> intersecting = new ArrayList<Label>();
@@ -763,7 +834,7 @@ public class Plane {
 	}
 	
 	
-	*/
+	
 	
 	
 	
