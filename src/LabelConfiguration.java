@@ -12,11 +12,11 @@ public class LabelConfiguration {
 	private Orientation lastChangeFrom;
 	private Orientation lastChangeTo;
 	
-	public LabelConfiguration(PosPoint[] p, double height, double ratio){
+	public LabelConfiguration(ArrayList<PosPoint> p, double height, double ratio){
 		
-		this.labels = new Label[p.length];
-		for (int i = 0; i < p.length; i++) {
-            this.labels[i] = new Label(p[i],r.nextBoolean() ? 1 : 0,r.nextBoolean());
+		this.labels = new Label[p.size()];
+		for (int i = 0; i < p.size(); i++) {
+            this.labels[i] = new Label(p.get(i),r.nextBoolean() ? 1 : 0,r.nextBoolean());
             
             Label l = labels[i];
     		double top = l.getBoundPoint().getY() + (l.isTop() ? height : 0);

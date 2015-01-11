@@ -261,9 +261,9 @@ public class QuadTree {
     	
 	}
 	
-	public void init(Label[] labels, double vSize, double ratio, int range){
+	public void init(Label[] labels, double vSize, double ratio, int rangeX, int rangeY){
 		this.empty();
-		this.bounds = new Rectangle2D.Double(0 - vSize * ratio,0 - vSize,range + (2 * vSize * ratio),range + (2 * vSize));
+		this.bounds = new Rectangle2D.Double(0 - vSize * ratio,0 - vSize,rangeX + (2 * vSize * ratio),rangeY + (2 * vSize));
     	
 		for (int i = 0; i < labels.length; i++) {
     		Label l = labels[i];
