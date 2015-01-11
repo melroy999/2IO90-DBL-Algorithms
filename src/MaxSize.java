@@ -149,14 +149,13 @@ public class MaxSize {
             int nrOfVerticalPoints = 0;
             int nrOfHorizontalPoints = 0;
             int k = j-1;
-            Point p2 = points[pointers[k]];
-            while(0<=k && p.getX() == p2.getX()){
+            while(0<=k && p.getX() == points[pointers[k]].getX()){
                 if(nrOfVerticalPoints == 3 && model == PlacementModel.FOURPOS){
-                    maximum = p.getY()-p2.getY();
+                    maximum = p.getY()-points[pointers[k]].getY();
                     break;
                 }
                 else if(nrOfVerticalPoints == 2 && model == PlacementModel.TWOPOS){
-                    maximum = p.getY()-p2.getY();
+                    maximum = p.getY()-points[pointers[k]].getY();
                     break;
                 }
                 nrOfVerticalPoints++;
@@ -164,7 +163,7 @@ public class MaxSize {
             }
             j++;
             while(j<pointers.length){
-                p2 = points[pointers[j]];
+                Point p2 = points[pointers[j]];
                 //Check if point lies in the potential label, if so find the new maximum height
                 if(isInLabel(p, p2, maximum, ratio, orientation)){
                     double height = p.getY()-p2.getY(); 

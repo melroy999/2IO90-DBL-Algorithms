@@ -3,16 +3,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
 
 /*
  * 2IO90 DBL Algorithms
  * This is the main class of the labeler software.
- * It reads input, let it process and outputs the solution
+ * It reads input, let it process and outputs the solution.
  * as specified in the problem description.
  */
 public class MapLabeler {
@@ -51,7 +49,7 @@ public class MapLabeler {
 	
 	public static long startTime = 0;
 	
-	int repeat = 10;
+	int repeat = 1;
 
 	public MapLabeler() throws IOException{
 		pModel = PlacementModel.FOURPOS;
@@ -65,7 +63,8 @@ public class MapLabeler {
 					+ "average_2sat_time; max_2sat_time; total_average_2sat_time; total_max_2sat_time; nr_of_loops; placement_time; final_check_time; average_running_time";
 		}
 		else if(pModel == PlacementModel.FOURPOS){
-			s = "";
+			s = "test_nr; max_height; real_height; max_height_time; nr_of_loops; final_check_time; average_running_time";
+			//s = ""+points+"_"+test+";"+maxHeight+";"+realHeight+";"+round(maxHeightTime)+";"+nrOfLoops+";"+round(averageRunningTime);
 		}
 		else{
 			s = "test_nr; maxHeight; realHeight; maxHeightTime; initTime; totalAvgColTime; totalMaxColTime"
@@ -170,7 +169,7 @@ public class MapLabeler {
 							+";"+nrOfLoops+";"+round(averageRunningTime);
 				}
 				else{
-					s = "";
+					s = ""+points+"_"+test+";"+maxHeight+";"+realHeight+";"+round(maxHeightTime)+";"+nrOfLoops+";"+round(finalCheckTime)+";"+round(averageRunningTime);
 				}
 				s = s.replaceAll("\\.", ",");
 				writer.write(s);

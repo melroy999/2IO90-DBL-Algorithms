@@ -85,16 +85,98 @@ public class Plane {
 
 		rangeX = posPoints[xSortedOrder[xSortedOrder.length - 1]].getX();
 
-		for (int i = 0; i < xSortedOrder.length; i++) {// make the top labels for all points.
+		ArrayList<Label> allLabels = new ArrayList<Label>();
+
+		for (int i = 0; i < xSortedOrder.length; i++) {// make the top allLabels for all points.
 			int pointer = xSortedOrder[i];
 			PosPoint p = posPoints[pointer];
 
 			if (p.getY() > rangeY) {
 				rangeY = p.getY();
 			}
-		}
 
-		QuadTree quad = new QuadTree(0, new Rectangle(0, 0, rangeX + 1, rangeY + 1));// new quadtree with (top) level 0 and dimensions (range+1)^2
+			if (i > 0) {
+				if (i < posPoints.length - 1) {
+					int indexToRight = i - 1;
+					boolean clean = true;
+					while (indexToRight <= posPoints.length - 1 && clean
+							&& posPoints[xSortedOrder[indexToRight]].getX() - p.getX() < 2 * maxHeight * aspectRatio) {
+						int difY = posPoints[xSortedOrder[indexToRight]].getY() - p.getY();
+						if (difY < maxHeight && difY >= 0) {
+							clean = false;
+							break;
+						}
+						indexToRight++;
+					}
+
+					if (!clean) {
+						Label NE = new Label(p, 1, true);
+						allLabels.add(NE);// shift=1 and top=true gives us the NE label;
+						clauseToPoint.put(NE.toClause(), p);
+
+						Label NW = new Label(p, 0, true);
+						allLabels.add(NW);// shift=1 and top=true gives us the NE label;
+						clauseToPoint.put(NW.toClause(), p);
+
+						clean = true;
+					} else {
+						p.setPosition(Orientation.NE);
+					}
+
+					if (!clean) {
+						int indexToLeft = i - 1;
+						clean = true;
+
+						while (indexToLeft >= 0 && clean && p.getX() - posPoints[xSortedOrder[indexToLeft]].getX() < 2 * maxHeight * aspectRatio) {
+							int difY = posPoints[xSortedOrder[indexToLeft]].getY() - p.getY();
+							if (difY < maxHeight && difY >= 0) {
+								clean = false;
+								break;
+							}
+							indexToLeft--;
+						}
+
+						if (!clean) {
+							Label NE = new Label(p, 1, true);
+							allLabels.add(NE);// shift=1 and top=true gives us the NE label;
+							clauseToPoint.put(NE.toClause(), p);
+
+							Label NW = new Label(p, 0, true);
+							allLabels.add(NW);// shift=1 and top=true gives us the NE label;
+							clauseToPoint.put(NW.toClause(), p);
+						} else {
+							p.setPosition(Orientation.NW);
+						}
+					}
+				} else {// i = posPoints.length-1
+					Label NE = new Label(p, 1, true);
+					allLabels.add(NE);// shift=1 and top=true gives us the
+										// NE label;
+					clauseToPoint.put(NE.toClause(), p);
+		
+					Label NW = new Label(p, 0, true);
+					allLabels.add(NW);// shift=1 and top=true gives us the NE label;
+					clauseToPoint.put(NW.toClause(), p);
+					
+					//p.setPosition(Orientation.NE);
+				}
+			} else {// i==0
+				Label NE = new Label(p, 1, true);
+				allLabels.add(NE);// shift=1 and top=true gives us the
+									// NE label;
+				clauseToPoint.put(NE.toClause(), p);
+	
+				Label NW = new Label(p, 0, true);
+				allLabels.add(NW);// shift=1 and top=true gives us the NE label;
+				clauseToPoint.put(NW.toClause(), p);
+				
+				//p.setPosition(Orientation.NW);
+			}
+
+		}
+		
+		
+		QuadTree quad = new QuadTree(0, new Rectangle(0, 0, rangeX + 1, rangeY + 1),false);// new quadtree with (top) level 0 and dimensions (range+1)^2
 
 		int loops = 0;
 
@@ -104,97 +186,8 @@ public class Plane {
 										// the last checked height
 			debugPrint("Height: " + height + " lastHeight: " + lastHeight + " minHeight: " + minHeight + " maxHeight: " + maxHeight);
 			HashMap<PosPoint, Orientation> validOrientation = new HashMap<PosPoint, Orientation>();
-			ArrayList<Label> labels = new ArrayList<Label>();// all labels will be stored in this arrayList.
+			ArrayList<Label> labels = new ArrayList<Label>(allLabels);// all labels will be stored in this arrayList.
 
-			for (int i = 0; i < xSortedOrder.length; i++) {// make the top labels for all points.
-				int pointer = xSortedOrder[i];
-				PosPoint p = posPoints[pointer];
-
-				if (p.getY() > rangeY) {
-					rangeY = p.getY();
-				}
-
-				if (i > 0) {
-					if (i < posPoints.length - 1) {
-						int indexToRight = i - 1;
-						boolean clean = true;
-						while (indexToRight <= posPoints.length - 1 && clean
-								&& posPoints[xSortedOrder[indexToRight]].getX() - p.getX() < 2 * height * aspectRatio) {
-							int difY = posPoints[xSortedOrder[indexToRight]].getY() - p.getY();
-							if (difY < height && difY >= 0) {
-								clean = false;
-								break;
-							}
-							indexToRight++;
-						}
-
-						if (!clean) {
-							Label NE = new Label(p, 1, true);
-							labels.add(NE);// shift=1 and top=true gives us the NE label;
-							clauseToPoint.put(NE.toClause(), p);
-
-							Label NW = new Label(p, 0, true);
-							labels.add(NW);// shift=1 and top=true gives us the NE label;
-							clauseToPoint.put(NW.toClause(), p);
-
-							clean = true;
-						} else {
-							p.setPosition(Orientation.NE);
-						}
-
-						if (!clean) {
-							int indexToLeft = i - 1;
-							clean = true;
-
-							while (indexToLeft >= 0 && clean && p.getX() - posPoints[xSortedOrder[indexToLeft]].getX() < 2 * height * aspectRatio) {
-								int difY = posPoints[xSortedOrder[indexToLeft]].getY() - p.getY();
-								if (difY < height && difY >= 0) {
-									clean = false;
-									break;
-								}
-								indexToLeft--;
-							}
-
-							if (!clean) {
-								Label NE = new Label(p, 1, true);
-								labels.add(NE);// shift=1 and top=true gives us the NE label;
-								clauseToPoint.put(NE.toClause(), p);
-
-								Label NW = new Label(p, 0, true);
-								labels.add(NW);// shift=1 and top=true gives us the NE label;
-								clauseToPoint.put(NW.toClause(), p);
-							} else {
-								p.setPosition(Orientation.NW);
-							}
-						}
-					} else {// i = posPoints.length-1
-						Label NE = new Label(p, 1, true);
-						labels.add(NE);// shift=1 and top=true gives us the
-											// NE label;
-						clauseToPoint.put(NE.toClause(), p);
-			
-						Label NW = new Label(p, 0, true);
-						labels.add(NW);// shift=1 and top=true gives us the NE label;
-						clauseToPoint.put(NW.toClause(), p);
-						
-						//p.setPosition(Orientation.NE);
-					}
-				} else {// i==0
-					Label NE = new Label(p, 1, true);
-					labels.add(NE);// shift=1 and top=true gives us the
-										// NE label;
-					clauseToPoint.put(NE.toClause(), p);
-		
-					Label NW = new Label(p, 0, true);
-					labels.add(NW);// shift=1 and top=true gives us the NE label;
-					clauseToPoint.put(NW.toClause(), p);
-					
-					//p.setPosition(Orientation.NW);
-				}
-
-			}
-			
-			
 			// the additional clauses are required to fix the value of a dead
 			// label to the negation of the clauseValue of that label.
 			long time = System.nanoTime();
@@ -349,16 +342,17 @@ public class Plane {
 	private Orientation to;
 	boolean print = false;
 	boolean print2 = !true;
+	boolean print3 = false;
 
 	Orientation initial;
 
 	public Label[] find4PosSolutionSA(){
 		double coolingRate = 0.00003;
 		double initialTemp = 10000;
-		double initialHeight = 250;
+		//double initialHeight = 250;
 		
 		
-		int range = 10000;
+		//int range = 10000;
 		
 		
 		
@@ -369,22 +363,111 @@ public class Plane {
 		double minHeight = (aspectRatio < 1) ? 0.5 : (1/(2*aspectRatio));//minimal height	
 		//TODO Melroy: minimale height is een half keer de aspectratio de 2* moet er bij
 		//double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);//2x the maximal height, so that we start with the calculated max-height in the loop.
-		double maxHeight = initialHeight;
+		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);
 		
-		height = maxHeight;//height to use is the average of max and min height
+		MapLabeler.maxHeight = (float)maxHeight;
+		
+		//height = maxHeight;//height to use is the average of max and min height
+		height = (maxHeight+minHeight)/2;//calculate the average of the maxHeight and minHeight
+		double width = height * aspectRatio;//calculate the width.
+
+		//debugPrint(">" + height + "," + width + ":" + roundToHalf(height) + "," + roundToHalf(width) + ":" + Math.abs(height-roundToHalf(height)) + "," + Math.abs(width-roundToHalf(width)));
+		
+		//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
+		
+		if(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))){
+			if(roundToHalf(height)<=maxHeight && roundToHalf(height) >= minHeight){
+				height = roundToHalf(height);
+			}
+			else{
+				height = roundToHalf(width)/aspectRatio;
+			}
+		}
+		else{
+			if(roundToHalf(width)/aspectRatio<=maxHeight && roundToHalf(width)/aspectRatio >= minHeight){
+				height = roundToHalf(width)/aspectRatio;
+			}
+			else{
+				height = roundToHalf(height);
+			}
+		}
+		
+		
+		
 		double lastHeight = 0;
 		
 		LabelConfiguration finalBest = null;
 		double finalHeight = 0;
+		ArrayList<Integer> labelsFinalIndex = new ArrayList<Integer>();
+		ArrayList<Label> labelsFinalDone = new ArrayList<Label>();
+		ArrayList<Integer> labelsFinalDoneIndex = new ArrayList<Integer>();
 		
-		quad = new QuadTree(0, new Rectangle(0,0,range,range));
 		
 		
 		
-		
+		int loops = 0;
 		while(lastHeight != height && height != finalHeight){
 			
-			LabelConfiguration current = new LabelConfiguration(posPoints, height, aspectRatio);
+			rangeX = posPoints[xSortedOrder[xSortedOrder.length - 1]].getX();
+
+			ArrayList<Label> labelsDone = new ArrayList<Label>();
+			ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
+			ArrayList<PosPoint> labelsToProcess = new ArrayList<PosPoint>();
+			ArrayList<Integer> labelsToProcessIndex = new ArrayList<Integer>();
+
+			for (int i = 0; i < xSortedOrder.length; i++) {// make the top allLabels for all points.
+				int pointer = xSortedOrder[i];
+				PosPoint p = posPoints[pointer];
+
+				if (p.getY() > rangeY) {
+					rangeY = p.getY();
+				}
+				
+				boolean free = true;
+				
+				int indexRight = i + 1;
+				while(indexRight < posPoints.length && free && posPoints[xSortedOrder[indexRight]].getX() - p.getX() < 2 * height * aspectRatio){
+					int difY = Math.abs(posPoints[xSortedOrder[indexRight]].getY() - p.getY());
+					if (difY < height * 2) {
+						free = false;
+						break;
+					}
+					indexRight++;
+				}
+				
+				int indexLeft = i - 1;
+				while(indexLeft >= 0 && free && p.getX() - posPoints[xSortedOrder[indexLeft]].getX() < 2 * height * aspectRatio){
+					int difY = Math.abs(posPoints[xSortedOrder[indexLeft]].getY() - p.getY());
+					if (difY < height * 2) {
+						free = false;
+						break;
+					}
+					indexLeft--;
+				}
+				if(print3) debugPrint("       " + p + ": " + free);
+					
+				if(free){
+					labelsDone.add(new Label(p,1,true));
+					labelsDoneIndex.add(pointer);
+				}
+				else {
+					labelsToProcess.add(p);
+					labelsToProcessIndex.add(pointer);
+				}
+				
+				
+			}
+			
+			if(print3) debugPrint("Done " + labelsDone.size());
+			if(print3) debugPrint("To Process " + labelsToProcess.size());
+			
+			
+			
+			
+			quad = new QuadTree(0, new Rectangle(0,0,rangeX,rangeY),true);
+			
+			loops++;
+			LabelConfiguration current = new LabelConfiguration(labelsToProcess, height, aspectRatio);
 			
 			if(print) debugPrint("############################################################");
 			debugPrint("------>  height: " + height + " min " +minHeight + " max " + maxHeight);
@@ -392,7 +475,7 @@ public class Plane {
 			if(print) debugPrint("");
 			
 			best = new LabelConfiguration(current.getLabels());
-			quad.init(current.getLabels(), height, aspectRatio, range);//initialize the quadtree
+			quad.init(current.getLabels(), height, aspectRatio, rangeX, rangeY);//initialize the quadtree
 			labels = current.getLabels();
 			
 			int currentEnergy = calculateScore(quad, Integer.MAX_VALUE, null, null, null);
@@ -554,6 +637,12 @@ public class Plane {
 					if(finalHeight < height){
 						finalBest = new LabelConfiguration(best.getLabels());
 						finalHeight = height;
+						
+						labelsFinalIndex = labelsToProcessIndex;
+						labelsFinalDone = labelsDone;
+						labelsFinalDoneIndex = labelsDoneIndex;
+						
+						
 						debugPrint("NEW FINAL HEIGHT");
 						//break;
 					}
@@ -574,7 +663,7 @@ public class Plane {
 			//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
 			
 			height = (maxHeight+minHeight)/2;//calculate the average of the maxHeight and minHeight
-			double width = height * aspectRatio;//calculate the width.
+			width = height * aspectRatio;//calculate the width.
 
 			//debugPrint(">" + height + "," + width + ":" + roundToHalf(height) + "," + roundToHalf(width) + ":" + Math.abs(height-roundToHalf(height)) + "," + Math.abs(width-roundToHalf(width)));
 			
@@ -608,10 +697,32 @@ public class Plane {
 		debugPrint("FINAL HEIGHT: " + height);
 		debugPrint("FINAL BEST: " + finalBest);
 		
-		labels = finalBest.getLabels();
+		
+		
+		Label[] processed = finalBest.getLabels();
+		Label[] result = new Label[processed.length + labelsFinalDone.size()];
+		
+		for(int i = 0; i < processed.length; i++){
+			int index = labelsFinalIndex.get(i);
+			//System.out.println(index + " " + processed[i]);
+			result[index] = processed[i];
+		}
+		for(int i = 0; i < labelsFinalDone.size(); i++){
+			int index = labelsFinalDoneIndex.get(i);
+			//System.out.println(index + " " + labelsFinalDone.get(i));
+			result[index] = labelsFinalDone.get(i);
+		}
+		
+		labels = result;
+		debugPrint("Skipped by final optimalization: " + labelsFinalDone.size());
+		
 		
 		debugPrint("Time for collision detection: " + timeColDect);
-		return finalBest.getLabels();
+		
+		MapLabeler.nrOfLoops = loops;
+		MapLabeler.realHeight = (float)height;
+		
+		return result;
 	}
 	
 	private double calculateAcceptance(int oldEnergy, int newEnergy, double temperature){
@@ -830,8 +941,8 @@ public class Plane {
 			otherLabels[i].setHasIntersect(false);
 		}
 		
-		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range,range));
-		quad.init(otherLabels, height, aspectRatio, range);//initialize the quadtree
+		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range,range),false);
+		quad.init(otherLabels, height, aspectRatio, range, range);//initialize the quadtree
 		
 		
 		ArrayList<Label> intersecting = new ArrayList<Label>();
@@ -1616,9 +1727,16 @@ public class Plane {
 			otherLabels[i] = new Label(labels[i]);
 			otherLabels[i].setHasIntersect(false);
 		}
+		
+		QuadTree quad;
+		if(pModel.equals(PlacementModel.TWOPOS)){
+			quad = new QuadTree(0, new Rectangle(0, 0, range, range),false);			
+		}
+		else{
+			quad = new QuadTree(0, new Rectangle(0, 0, range, range),true);	
+		}
 
-		QuadTree quad = new QuadTree(0, new Rectangle(0, 0, range, range));
-		quad.init(otherLabels, height, aspectRatio, 10000);// initialize the quadtree
+		quad.init(otherLabels, height, aspectRatio, range, range);// initialize the quadtree
 
 		ArrayList<Label> intersecting = new ArrayList<Label>();
 
