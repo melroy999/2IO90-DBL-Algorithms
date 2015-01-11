@@ -364,6 +364,8 @@ public class Plane {
 		//double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);//2x the maximal height, so that we start with the calculated max-height in the loop.
 		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.FOURPOS);
 		
+		MapLabeler.maxHeight = (float)maxHeight;
+		
 		height = maxHeight;//height to use is the average of max and min height
 		double lastHeight = 0;
 		
@@ -374,9 +376,9 @@ public class Plane {
 		
 		
 		
-		
+		int loops = 0;
 		while(lastHeight != height && height != finalHeight){
-			
+			loops++;
 			LabelConfiguration current = new LabelConfiguration(posPoints, height, aspectRatio);
 			
 			if(print) debugPrint("############################################################");
@@ -604,6 +606,10 @@ public class Plane {
 		labels = finalBest.getLabels();
 		
 		debugPrint("Time for collision detection: " + timeColDect);
+		
+		MapLabeler.nrOfLoops = loops;
+		MapLabeler.realHeight = (float)height;
+		
 		return finalBest.getLabels();
 	}
 	
