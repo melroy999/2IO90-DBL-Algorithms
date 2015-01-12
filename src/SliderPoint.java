@@ -61,7 +61,7 @@ public class SliderPoint extends Point {
 		if (rightX-leftX == 0) { System.out.println("WTF M8");}
 		double s = (rightX-this.getX())/(rightX-leftX);
 		BigDecimal lel = new BigDecimal(String.valueOf(s));
-		lel = lel.setScale(10, RoundingMode.FLOOR);
+		lel = lel.setScale(14, RoundingMode.FLOOR);
 		s = lel.doubleValue();		
 		return s;
 	}
@@ -97,4 +97,10 @@ public class SliderPoint extends Point {
 		topY 	  = NEWtopY;
 		direction = NEWdirection;
 	}	
+	public void revertChanges(){
+		NEWleftX	= leftX 	   ;
+		NEWrightX	= rightX 	  ;
+		NEWtopY		= topY 	   ;
+		NEWdirection= direction  ;
+	}
 }
