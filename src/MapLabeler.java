@@ -105,7 +105,6 @@ public class MapLabeler {
 							sc = new Scanner(input);
 						}
 						else{
-							System.out.println("Gib input pl0x");
 							sc = new Scanner(System.in);
 						}
 						readInput();
