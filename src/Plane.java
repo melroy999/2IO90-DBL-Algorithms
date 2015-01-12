@@ -316,19 +316,8 @@ public class Plane {
 	}
 	
 	
-	public PosPoint[] find2PosSolution(int rotation) {
-		//System.out.println(posPoints);
-		String[] shittyPoePoe = new String[posPoints.length];
-		for(int i = 0; i < posPoints.length; i++){
-			//System.out.print(posPoints[i]);
-			shittyPoePoe[i]=posPoints[i].toString();
-		}
-		
+	public PosPoint[] find2PosSolution(int rotation) {		
 		posPoints = RotatePlane(rotation, posPoints);
-		
-		for(int i = 0; i < posPoints.length; i++){
-			//System.out.print(posPoints[i]+ " ");
-		}
 		
 		double aspectRatioOriginal = aspectRatio;
 		
@@ -550,7 +539,7 @@ public class Plane {
 							// minHeight found.
 
 		debugPrint("Resulting height: " + height + ", " + maxHeight + ", " + minHeight);
-
+		
 		long time = System.nanoTime();
 		if (minGraph != null) {// border case: solution is minimal height
 			Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));// the
@@ -591,12 +580,6 @@ public class Plane {
 			height = height / aspectRatio;
 		}
 		
-		for(int i = 0; i < posPoints.length; i++){
-			if(!shittyPoePoe[i].equals(posPoints[i].toString())){
-				System.out.println(posPoints[i].toString() + ":" + shittyPoePoe[i]);
-			}
-		}
-		
 		return posPoints;
 	}
 
@@ -605,7 +588,7 @@ public class Plane {
 	}
 
 	public void getNext(ClauseValue next) {
-		if (clauseToPoint.get(next).getPosition() == null) {// if the connected point has no position set yet
+		if (clauseToPoint.containsKey(next) && clauseToPoint.get(next).getPosition() == null) {// if the connected point has no position set yet
 			clauseToPoint.get(next).setPosition(next.isPositive() ? 1 : 0, true);// set the position to this clauseValues' position.
 			if (!minGraph.edgesFrom(next).isEmpty()) {// if the edges from this clauseValue in the graph is not empty.
 				for (ClauseValue value : minGraph.edgesFrom(next)) {// for all the edges:
@@ -643,8 +626,8 @@ public class Plane {
 	        }
 	    }
 	    
-		double coolingRate = 0.00003;
-		double initialTemp = 10000;
+		double coolingRate = 0.000003;
+		double initialTemp = 100000;
 		//double initialHeight = 250;
 		
 		
@@ -956,6 +939,7 @@ public class Plane {
 		debugPrint("Time for collision detection: " + timeColDect);
 		
 		if(height <= backupHeight){
+			System.out.println("Chose 2pos");
 			result = new Label[solution2Pos.length];
 			labels = new Label[solution2Pos.length]; 
 		    height = backupHeight;

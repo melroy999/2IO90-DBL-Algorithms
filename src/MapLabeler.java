@@ -75,10 +75,10 @@ public class MapLabeler {
 		}
 		writer.write(s);
 		writer.newLine();
-		for(int points = 100; points <= 5000; points += 100){
+		for(int points = 10000; points <= 10000; points += 100){
 			System.out.println(points);
-			for(int test = 1; test <= 5; test++){
-				//System.out.println(test);
+			for(int test = 1; test <= 20; test++){
+				System.out.println(test);
 				maxHeight = 0;
 				realHeight = 0;
 				maxHeightTime = 0;
