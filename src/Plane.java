@@ -1309,9 +1309,31 @@ public class Plane {
 		xPointArray = MergeSort.sort(sliderPoints, true);
 		MapLabeler.initTime += (System.nanoTime() - time);
 
+		PosPoint[] solution2Pos = Arrays.copyOf(find2PosSolution(), posPoints.length);
+        double backupHeight = height;
+		
 		CalcSlider(sliderPoints, xPointArray);
-
-		MapLabeler.realHeight = (float) height;
+		if(height <= backupHeight){
+		    height = backupHeight;
+		    MapLabeler.realHeight = (float) backupHeight;
+		    for(int i=0; i<solution2Pos.length; i++){
+		        PosPoint p = solution2Pos[i];
+		        sliderPoints[i] = new SliderPoint(p.getX(), p.getY(), aspectRatio);
+		        
+		        double width = height*aspectRatio;
+		        if(p.getPosition() == Orientation.NE){
+		            sliderPoints[i].setLeftX(p.getX());
+		            sliderPoints[i].setRightX(p.getX()+width);
+		        }
+		        else{
+		            sliderPoints[i].setLeftX(p.getX()-width);
+		            sliderPoints[i].setRightX(p.getX());
+		        }
+		    }
+		}
+		else{
+		    MapLabeler.realHeight = (float) height;
+		}
 		if (MapLabeler.totalMaxColTime < MapLabeler.totalAvgColTime - lastCheck) {
 			MapLabeler.totalMaxColTime = MapLabeler.totalAvgColTime - lastCheck;
 		}
