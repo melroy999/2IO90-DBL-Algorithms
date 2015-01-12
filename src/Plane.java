@@ -37,7 +37,7 @@ public class Plane {
 
 	private double delta = 0.001;// difference of border
 	private boolean debug = !true;
-	
+
 	public Plane(double aspectRatio, SliderPoint[] points, PlacementModel pModel) {
 		this.aspectRatio = aspectRatio;
 		this.numberOfPoints = points.length;
@@ -400,9 +400,10 @@ public class Plane {
 		
 		
 		ArrayList<Integer> labelsToProcessIndex = new ArrayList<Integer>();
+		ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
 		
 		int timeend = 290000;
-		//timeend = 10000;
+		//timeend = 5000;
 		
 		
 		int loops = 0;
@@ -411,7 +412,7 @@ public class Plane {
 			rangeX = posPoints[xSortedOrder[xSortedOrder.length - 1]].getX();
 
 			ArrayList<Label> labelsDone = new ArrayList<Label>();
-			ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
+			labelsDoneIndex = new ArrayList<Integer>();
 			ArrayList<PosPoint> labelsToProcess = new ArrayList<PosPoint>();
 			labelsToProcessIndex = new ArrayList<Integer>();
 
@@ -641,28 +642,49 @@ public class Plane {
 		
 		
 		Label[] processed = finalBest.getLabels();
-		Label[] result = new Label[processed.length + labelsFinalDone.size()];
 		
-		debugPrint("result size" + result.length);
 		
-		for(int i = 0; i < processed.length; i++){
-			if(labelsFinalIndex.size() > 0){
+		int size = 0;
+		if(labelsFinalIndex.size() > 0){ size += processed.length; }
+		else { size += labelsToProcessIndex.size();}
+		if(labelsFinalDone.size() > 0){ size += labelsFinalDone.size(); }
+		else { size += labelsDoneIndex.size();}
+		
+		Label[] result = new Label[size];
+		
+		
+		
+		if(labelsFinalIndex.size() > 0){
+			for(int i = 0; i < processed.length; i++){
 				int index = labelsFinalIndex.get(i);
 				result[index] = processed[i];
 			}
-			else {
+		}
+		else {
+			for(int i = 0; i < labelsToProcessIndex.size(); i++){
 				int index = labelsToProcessIndex.get(i);
 				result[index] = processed[i];
 			}
+		}
+		
+		
+		if(labelsFinalDone.size() > 0){
+			for(int i = 0; i < labelsFinalDone.size(); i++){
+				int index = labelsFinalDoneIndex.get(i);
+				result[index] = labelsFinalDone.get(i);
+			}
+		}
+		else {
+			for(int i = 0; i < labelsDoneIndex.size(); i++){
+				int index = labelsDoneIndex.get(i);
+				result[index] = processed[i];
+			}
+		}
 			
 			//System.out.println(index + " " + processed[i]);
 			
-		}
-		for(int i = 0; i < labelsFinalDone.size(); i++){
-			int index = labelsFinalDoneIndex.get(i);
-			//System.out.println(index + " " + labelsFinalDone.get(i));
-			result[index] = labelsFinalDone.get(i);
-		}
+		
+		
 		
 		labels = result;
 		debugPrint("Skipped by final optimalization: " + labelsFinalDone.size());
@@ -1751,5 +1773,66 @@ public class Plane {
 		 */
 		
 		return amount;
+	}
+
+	public PosPoint[] RotatePlane(int degree, PosPoint[] posPoints, double aspectRatio){
+		aspectRatio = 1/aspectRatio;
+		PosPoint[] newPoints = new PosPoint[posPoints.length];
+		if(degree==0){
+			return posPoints;
+		} else {
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				newPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), degree), rotateY(p.getX(), p.getY(), degree));
+			}
+		}
+		return newPoints;
+	}
+	
+	public int rotateX(int x, int y, int degree){
+		x = x - 5000;
+		y = y - 5000;
+		return (int)Math.round(x*Math.cos(degree)-y*Math.sin(degree)) + 5000;
+	}
+	
+	public int rotateY(int x, int y, int degree){
+		x = x - 5000;
+		y = y - 5000;
+		return (int)Math.round(y*Math.cos(degree)+x*Math.sin(degree)) + 5000;
+	}
+	
+	public PosPoint[] RestorePlane(int degree, PosPoint[] posPoints){
+		PosPoint[] oldPoints = new PosPoint[posPoints.length];
+		if(degree==0){
+			return posPoints;
+		} else if(degree==90){
+			HashMap<Orientation, Orientation> convertTable = new HashMap<Orientation, Orientation>();
+			convertTable.put(Orientation.NE, Orientation.SE);
+			convertTable.put(Orientation.NW, Orientation.NE);
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				oldPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), -degree), rotateY(p.getX(), p.getY(), -degree));
+				oldPoints[i].setPosition(convertTable.get(p.getPosition()));
+			}
+		} else if(degree==180){
+			HashMap<Orientation, Orientation> convertTable = new HashMap<Orientation, Orientation>();
+			convertTable.put(Orientation.NE, Orientation.SW);
+			convertTable.put(Orientation.NW, Orientation.SE);
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				oldPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), -degree), rotateY(p.getX(), p.getY(), -degree));
+				oldPoints[i].setPosition(convertTable.get(p.getPosition()));
+			}
+		} else {
+			HashMap<Orientation, Orientation> convertTable = new HashMap<Orientation, Orientation>();
+			convertTable.put(Orientation.NE, Orientation.NW);
+			convertTable.put(Orientation.NW, Orientation.SW);
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				oldPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), -degree), rotateY(p.getX(), p.getY(), -degree));
+				oldPoints[i].setPosition(convertTable.get(p.getPosition()));
+			}
+		}
+		return oldPoints;
 	}
 }
