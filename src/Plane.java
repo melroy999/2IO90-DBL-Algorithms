@@ -403,17 +403,21 @@ public class Plane {
 		ArrayList<Integer> labelsFinalDoneIndex = new ArrayList<Integer>();
 		
 		
+		ArrayList<Integer> labelsToProcessIndex = new ArrayList<Integer>();
+		
+		int timeend = 290000;
+		//timeend = 10000;
 		
 		
 		int loops = 0;
-		while(lastHeight != height && height != finalHeight){
+		while(lastHeight != height && height != finalHeight && (System.currentTimeMillis() - MapLabeler.start <= timeend)){
 			
 			rangeX = posPoints[xSortedOrder[xSortedOrder.length - 1]].getX();
 
 			ArrayList<Label> labelsDone = new ArrayList<Label>();
 			ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
 			ArrayList<PosPoint> labelsToProcess = new ArrayList<PosPoint>();
-			ArrayList<Integer> labelsToProcessIndex = new ArrayList<Integer>();
+			labelsToProcessIndex = new ArrayList<Integer>();
 
 			for (int i = 0; i < xSortedOrder.length; i++) {// make the top allLabels for all points.
 				int pointer = xSortedOrder[i];
@@ -490,7 +494,7 @@ public class Plane {
 			
 			
 			
-			while(temp > 1 && bestEnergy > 0){
+			while(temp > 1 && bestEnergy > 0 && (System.currentTimeMillis() - MapLabeler.start <= timeend) ){
 				LabelConfiguration newSolution = current;
 				int position = (int) (newSolution.labelSize() * r.nextDouble());
 				
@@ -521,14 +525,12 @@ public class Plane {
 					//if(print) debugPrint(" change to " + lChanged.getOrientation());
 					
 					
-					int counter = 0;
 					from = initial;
 					to = newSolution.getLastTo();
 					boolean triedall = false;
 					if(print) System.out.println (" from: " + newSolution.getLastFrom());
 					if(print) debugPrint("To: " + newSolution.getLastTo() + " " + containsPoint2(after,lChanged, height));
 					while(!containsPoint2(after,lChanged, height).isEmpty()){
-						counter++;
 						if(options.size() == 0){
 							if(!triedall){
 								options.add(initial);
@@ -691,21 +693,34 @@ public class Plane {
 		
 		if(finalBest == null){
 			finalBest = best;
+			if(best == null){
+				finalBest = new LabelConfiguration(posPoints, height, aspectRatio);
+			}
 			debugPrint("NOT FOUND");
 		}
 		
 		debugPrint("FINAL HEIGHT: " + height);
-		debugPrint("FINAL BEST: " + finalBest);
+		//debugPrint("FINAL BEST: " + finalBest);
 		
 		
 		
 		Label[] processed = finalBest.getLabels();
 		Label[] result = new Label[processed.length + labelsFinalDone.size()];
 		
+		debugPrint("result size" + result.length);
+		
 		for(int i = 0; i < processed.length; i++){
-			int index = labelsFinalIndex.get(i);
+			if(labelsFinalIndex.size() > 0){
+				int index = labelsFinalIndex.get(i);
+				result[index] = processed[i];
+			}
+			else {
+				int index = labelsToProcessIndex.get(i);
+				result[index] = processed[i];
+			}
+			
 			//System.out.println(index + " " + processed[i]);
-			result[index] = processed[i];
+			
 		}
 		for(int i = 0; i < labelsFinalDone.size(); i++){
 			int index = labelsFinalDoneIndex.get(i);
