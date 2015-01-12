@@ -49,7 +49,7 @@ public class MapLabeler {
 	
 	public static long startTime = 0;
 	
-	int repeat = 1;
+	int repeat = 10;
 
 	public MapLabeler() throws IOException{
 		pModel = PlacementModel.TWOPOS;
