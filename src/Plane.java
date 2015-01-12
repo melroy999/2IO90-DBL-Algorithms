@@ -3,6 +3,7 @@ import java.awt.geom.Rectangle2D;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -631,11 +632,15 @@ public class Plane {
 	public Label[] find4PosSolutionSA(){
 	    //Cheats enabled 
 	    //JUMPJET driehoek driehoek vierkantje rondje kruisje l1 l1 down up
-	    PosPoint[] solution2Pos = find2PosSolution();
+	    PosPoint[] solution2Pos = Arrays.copyOf(find2PosSolution(), posPoints.length);
 	    double backupHeight = height;
 	    
 	    for(int i=1; i<4; i++){
 	        PosPoint[] temp = find2PosSolution(90*i);
+	        if(backupHeight < height){
+	            backupHeight = height;
+	            solution2Pos = Arrays.copyOf(temp, temp.length);
+	        }
 	    }
 	    
 		double coolingRate = 0.00003;
@@ -944,47 +949,48 @@ public class Plane {
 		else { size += labelsDoneIndex.size();}
 		
 		Label[] result = new Label[size];
-		
-		
-		
-		if(labelsFinalIndex.size() > 0){
-			for(int i = 0; i < processed.length; i++){
-				int index = labelsFinalIndex.get(i);
-				result[index] = processed[i];
-			}
-		}
-		else {
-			for(int i = 0; i < labelsToProcessIndex.size(); i++){
-				int index = labelsToProcessIndex.get(i);
-				result[index] = processed[i];
-			}
-		}
-		
-		
-		if(labelsFinalDone.size() > 0){
-			for(int i = 0; i < labelsFinalDone.size(); i++){
-				int index = labelsFinalDoneIndex.get(i);
-				result[index] = labelsFinalDone.get(i);
-			}
-		}
-		else {
-			for(int i = 0; i < labelsDoneIndex.size(); i++){
-				int index = labelsDoneIndex.get(i);
-				result[index] = processed[i];
-			}
-		}
-			
-			//System.out.println(index + " " + processed[i]);
-			
-		
-		
-		
-		labels = result;
+	
 		debugPrint("Skipped by final optimalization: " + labelsFinalDone.size());
 		
 		
 		debugPrint("Time for collision detection: " + timeColDect);
-		
+		if(height <= backupHeight){
+		    height = backupHeight;
+		    for(int i=0; i<solution2Pos.length; i++){
+		        float s = (solution2Pos[i].getPosition() == Orientation.NE || solution2Pos[i].getPosition() == Orientation.SE)? 1 : 0;
+		        boolean b = (solution2Pos[i].getPosition() == Orientation.NE || solution2Pos[i].getPosition() == Orientation.NW)? true : false;
+		        labels[i] = new Label(solution2Pos[i], s, b);
+		        result[i] = labels[i];
+		    }
+		}
+		else{
+		      if(labelsFinalIndex.size() > 0){
+		            for(int i = 0; i < processed.length; i++){
+		                int index = labelsFinalIndex.get(i);
+		                result[index] = processed[i];
+		            }
+		        }
+		        else {
+		            for(int i = 0; i < labelsToProcessIndex.size(); i++){
+		                int index = labelsToProcessIndex.get(i);
+		                result[index] = processed[i];
+		            }
+		        }
+		        
+		        if(labelsFinalDone.size() > 0){
+		            for(int i = 0; i < labelsFinalDone.size(); i++){
+		                int index = labelsFinalDoneIndex.get(i);
+		                result[index] = labelsFinalDone.get(i);
+		            }
+		        }
+		        else {
+		            for(int i = 0; i < labelsDoneIndex.size(); i++){
+		                int index = labelsDoneIndex.get(i);
+		                result[index] = processed[i];
+		            }
+		        }
+		        labels = result;
+		}
 		MapLabeler.nrOfLoops = loops;
 		MapLabeler.realHeight = (float)height;
 		
