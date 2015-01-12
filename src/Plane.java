@@ -1054,7 +1054,7 @@ public class Plane {
 		double maxH = MaxSize.getMaxPossibleHeight(sArray, pointer, aspectRatio, PlacementModel.ONESLIDER);
 		MapLabeler.maxHeight = (float) maxH;
 		double T = 0.01;
-		delta = 0.000000000000001; // maxH/(Math.pow(2,(1000/(sArray.length *
+		delta = 0.00000000000001; // maxH/(Math.pow(2,(1000/(sArray.length *
 									// T))));
 		// System.out.println("Precision: " + delta);
 		// System.out.println("MaxSize gives: " + maxH);
