@@ -403,7 +403,7 @@ public class Plane {
 		ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
 		
 		int timeend = 290000;
-		timeend = 5000;
+		//timeend = 5000;
 		
 		
 		int loops = 0;
