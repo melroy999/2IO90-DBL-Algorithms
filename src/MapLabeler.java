@@ -52,9 +52,12 @@ public class MapLabeler {
 	int repeat = 10;
 
 	public MapLabeler() throws IOException{
-		pModel = PlacementModel.ONESLIDER;
-		String testing = "1slider";
+
+
+		pModel = PlacementModel.TWOPOS;
+		String testing = "2pos";
 		File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v"+System.currentTimeMillis()+".csv");
+
 		outputFile.createNewFile();
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 		String s = "";
@@ -72,7 +75,7 @@ public class MapLabeler {
 		}
 		writer.write(s);
 		writer.newLine();
-		for(int points = 100; points <= 10000; points += 100){
+		for(int points = 100; points <= 1000; points += 100){
 			System.out.println(points);
 			for(int test = 1; test <= 20; test++){
 				//System.out.println(test);
@@ -92,6 +95,7 @@ public class MapLabeler {
 				totalAvg2SatTime = 0;//
 				totalMaxColTime = 0;//
 				totalMax2SatTime = 0;//
+
 				input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
 				output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
 				for(int iteration = 0; iteration < repeat; iteration++){
@@ -105,7 +109,6 @@ public class MapLabeler {
 							sc = new Scanner(input);
 						}
 						else{
-							System.out.println("Gib input pl0x");
 							sc = new Scanner(System.in);
 						}
 						readInput();
