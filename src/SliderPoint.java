@@ -1,7 +1,6 @@
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-
 public class SliderPoint extends Point {
 	public enum slideDirection{LEFT,RIGHT}
 	private slideDirection direction;
@@ -25,7 +24,6 @@ public class SliderPoint extends Point {
 		mayGrow = false;
 	}
 	
-	/*--Getters and Setters--*/
 	public void setLeftX(double x)	{ leftX = x;}
 	public double getLeftX()		{return leftX;}
 	
@@ -59,13 +57,11 @@ public class SliderPoint extends Point {
 		return NEWdirection.toString();
 	}
 	
-	
-	/*--Calculate values based on the current situation--*/
 	public double getS(){
 		if (rightX-leftX == 0) { System.out.println("WTF M8");}
 		double s = (rightX-this.getX())/(rightX-leftX);
-		BigDecimal lel = new BigDecimal(s);
-		lel = lel.setScale(14, RoundingMode.FLOOR);
+		BigDecimal lel = new BigDecimal(String.valueOf(s));
+		lel = lel.setScale(10, RoundingMode.FLOOR);
 		s = lel.doubleValue();		
 		return s;
 	}
@@ -100,7 +96,5 @@ public class SliderPoint extends Point {
 		rightX 	  = NEWrightX;
 		topY 	  = NEWtopY;
 		direction = NEWdirection;
-	}
-
-		
+	}	
 }
