@@ -3,7 +3,6 @@ import java.awt.geom.Rectangle2D;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,10 +35,8 @@ public class Plane {
 	public int[] xPointArray; // slider pointers
 	private PosPoint[] posPoints;
 
-
 	private double delta = 0.001;// difference of border
 	private boolean debug = !true;
-
 	public Plane(double aspectRatio, SliderPoint[] points, PlacementModel pModel) {
 		this.aspectRatio = aspectRatio;
 		this.numberOfPoints = points.length;
@@ -102,7 +99,7 @@ public class Plane {
 					while (indexToRight <= posPoints.length - 1 && clean
 							&& posPoints[xSortedOrder[indexToRight]].getX() - p.getX() < 2 * maxHeight * aspectRatio) {
 						int difY = posPoints[xSortedOrder[indexToRight]].getY() - p.getY();
-						if (Math.abs(difY) < 2*maxHeight) {
+						if (difY < maxHeight && difY >= 0) {
 							clean = false;
 							break;
 						}
@@ -110,17 +107,17 @@ public class Plane {
 					}
 
 					if (!clean) {
-						Label NE = new Label(p, 1, false);
+						Label NE = new Label(p, 1, true);
 						allLabels.add(NE);// shift=1 and top=true gives us the NE label;
 						clauseToPoint.put(NE.toClause(), p);
 
-						Label NW = new Label(p, 0, false);
+						Label NW = new Label(p, 0, true);
 						allLabels.add(NW);// shift=1 and top=true gives us the NE label;
 						clauseToPoint.put(NW.toClause(), p);
 
 						clean = true;
 					} else {
-						p.setPosition(Orientation.SE);
+						p.setPosition(Orientation.NE);
 					}
 
 					if (!clean) {
@@ -129,7 +126,7 @@ public class Plane {
 
 						while (indexToLeft >= 0 && clean && p.getX() - posPoints[xSortedOrder[indexToLeft]].getX() < 2 * maxHeight * aspectRatio) {
 							int difY = posPoints[xSortedOrder[indexToLeft]].getY() - p.getY();
-							if (Math.abs(difY) < 2*maxHeight) {
+							if (difY < maxHeight && difY >= 0) {
 								clean = false;
 								break;
 							}
@@ -137,36 +134,36 @@ public class Plane {
 						}
 
 						if (!clean) {
-							Label NE = new Label(p, 1, false);
+							Label NE = new Label(p, 1, true);
 							allLabels.add(NE);// shift=1 and top=true gives us the NE label;
 							clauseToPoint.put(NE.toClause(), p);
 
-							Label NW = new Label(p, 0, false);
+							Label NW = new Label(p, 0, true);
 							allLabels.add(NW);// shift=1 and top=true gives us the NE label;
 							clauseToPoint.put(NW.toClause(), p);
 						} else {
-							p.setPosition(Orientation.SW);
+							p.setPosition(Orientation.NW);
 						}
 					}
 				} else {// i = posPoints.length-1
-					Label NE = new Label(p, 1, false);
+					Label NE = new Label(p, 1, true);
 					allLabels.add(NE);// shift=1 and top=true gives us the
 										// NE label;
 					clauseToPoint.put(NE.toClause(), p);
 		
-					Label NW = new Label(p, 0, false);
+					Label NW = new Label(p, 0, true);
 					allLabels.add(NW);// shift=1 and top=true gives us the NE label;
 					clauseToPoint.put(NW.toClause(), p);
 					
 					//p.setPosition(Orientation.NE);
 				}
 			} else {// i==0
-				Label NE = new Label(p, 1, false);
+				Label NE = new Label(p, 1, true);
 				allLabels.add(NE);// shift=1 and top=true gives us the
 									// NE label;
 				clauseToPoint.put(NE.toClause(), p);
 	
-				Label NW = new Label(p, 0, false);
+				Label NW = new Label(p, 0, true);
 				allLabels.add(NW);// shift=1 and top=true gives us the NE label;
 				clauseToPoint.put(NW.toClause(), p);
 				
@@ -304,7 +301,7 @@ public class Plane {
 
 		for (PosPoint p : posPoints) {
 			if (p.getPosition() == null) {
-				p.setPosition(Orientation.SE);
+				p.setPosition(Orientation.NE);
 			}
 		}
 		MapLabeler.placementTime += (System.nanoTime() - time);
@@ -402,9 +399,10 @@ public class Plane {
 		
 		
 		ArrayList<Integer> labelsToProcessIndex = new ArrayList<Integer>();
+		ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
 		
 		int timeend = 290000;
-		//timeend = 10000;
+		//timeend = 5000;
 		
 		
 		int loops = 0;
@@ -413,7 +411,7 @@ public class Plane {
 			rangeX = posPoints[xSortedOrder[xSortedOrder.length - 1]].getX();
 
 			ArrayList<Label> labelsDone = new ArrayList<Label>();
-			ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
+			labelsDoneIndex = new ArrayList<Integer>();
 			ArrayList<PosPoint> labelsToProcess = new ArrayList<PosPoint>();
 			labelsToProcessIndex = new ArrayList<Integer>();
 
@@ -643,28 +641,49 @@ public class Plane {
 		
 		
 		Label[] processed = finalBest.getLabels();
-		Label[] result = new Label[processed.length + labelsFinalDone.size()];
 		
-		debugPrint("result size" + result.length);
 		
-		for(int i = 0; i < processed.length; i++){
-			if(labelsFinalIndex.size() > 0){
+		int size = 0;
+		if(labelsFinalIndex.size() > 0){ size += processed.length; }
+		else { size += labelsToProcessIndex.size();}
+		if(labelsFinalDone.size() > 0){ size += labelsFinalDone.size(); }
+		else { size += labelsDoneIndex.size();}
+		
+		Label[] result = new Label[size];
+		
+		
+		
+		if(labelsFinalIndex.size() > 0){
+			for(int i = 0; i < processed.length; i++){
 				int index = labelsFinalIndex.get(i);
 				result[index] = processed[i];
 			}
-			else {
+		}
+		else {
+			for(int i = 0; i < labelsToProcessIndex.size(); i++){
 				int index = labelsToProcessIndex.get(i);
 				result[index] = processed[i];
 			}
+		}
+		
+		
+		if(labelsFinalDone.size() > 0){
+			for(int i = 0; i < labelsFinalDone.size(); i++){
+				int index = labelsFinalDoneIndex.get(i);
+				result[index] = labelsFinalDone.get(i);
+			}
+		}
+		else {
+			for(int i = 0; i < labelsDoneIndex.size(); i++){
+				int index = labelsDoneIndex.get(i);
+				result[index] = processed[i];
+			}
+		}
 			
 			//System.out.println(index + " " + processed[i]);
 			
-		}
-		for(int i = 0; i < labelsFinalDone.size(); i++){
-			int index = labelsFinalDoneIndex.get(i);
-			//System.out.println(index + " " + labelsFinalDone.get(i));
-			result[index] = labelsFinalDone.get(i);
-		}
+		
+		
 		
 		labels = result;
 		debugPrint("Skipped by final optimalization: " + labelsFinalDone.size());
@@ -1720,7 +1739,7 @@ public class Plane {
 		
 		return amount;
 	}
-	
+
 	public PosPoint[] RotatePlane(int degree, PosPoint[] posPoints, double aspectRatio){
 		aspectRatio = 1/aspectRatio;
 		PosPoint[] newPoints = new PosPoint[posPoints.length];

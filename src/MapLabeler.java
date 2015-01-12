@@ -55,6 +55,7 @@ public class MapLabeler {
 		pModel = PlacementModel.TWOPOS;
 		String testing = "2pos";
 		File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v"+System.currentTimeMillis()+".csv");
+
 		outputFile.createNewFile();
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 		String s = "";
@@ -105,7 +106,6 @@ public class MapLabeler {
 							sc = new Scanner(input);
 						}
 						else{
-							System.out.println("Gib input pl0x");
 							sc = new Scanner(System.in);
 						}
 						readInput();
