@@ -38,7 +38,7 @@ public class Plane {
 
 
 	private double delta = 0.001;// difference of border
-	private boolean debug = true;
+	private boolean debug = !true;
 
 	public Plane(double aspectRatio, SliderPoint[] points, PlacementModel pModel) {
 		this.aspectRatio = aspectRatio;
@@ -1068,6 +1068,7 @@ public class Plane {
 			// System.out.println(saveD);
 			boolean mayContinue = true;
 			currentH = (maxH + minH) / 2;
+			//System.out.println(currentH);
 			debugPrint("Current: " + currentH);
 			for (i = sliderPoints.length - 1; i >= 0; i--) {
 				sliderPoints[pointer[i]].setNEWsize(currentH);
@@ -1089,6 +1090,9 @@ public class Plane {
 				sliderPoints[pointer[i]].setMayGrow(false);
 			}
 			debugPrint("new max and min: " + maxH + ", " + minH);
+			
+			if (saveD == maxH - minH) {System.out.println("Terminated vanwege delta statisch"); }
+			
 		}
 		MapLabeler.nrOfLoops = loops;
 
@@ -1132,7 +1136,7 @@ public class Plane {
 		// height = Math.floor(minH*1000000000)*1000000000;
 		// height = minH;
 		BigDecimal lel = new BigDecimal(minH);
-		lel = lel.setScale(15, RoundingMode.FLOOR);
+		lel = lel.setScale(14, RoundingMode.FLOOR);
 		height = lel.doubleValue();
 		for (i = sliderPoints.length - 1; i >= 0; i--) {
 			sliderPoints[pointer[i]].setNEWsize(height);
@@ -1148,6 +1152,13 @@ public class Plane {
 		}
 		MapLabeler.placementTime = (System.nanoTime() - time);
 	}
+	
+	boolean checkSameXforY(SliderPoint i, SliderPoint j) {
+		if ((i.getX() == j.getX()) && (i.getY() < j.getY())){
+				return true;
+		}
+		else {return false;}
+	}
 
 	boolean checkNewSituation(SliderPoint[] sArray, int[] pointer, int pointLoc) {
 		long time = System.nanoTime();
@@ -1161,9 +1172,11 @@ public class Plane {
 		} // the last label is always moveable
 		while (j >= 0
 				&& (sliderPoints[pointer[j]].getX() > sliderPoints[pointer[i]].getNEWLeftX()
-						- (sliderPoints[pointer[i]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX()))) { // bound for possible collisions
+						- (sliderPoints[pointer[i]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX())) && checkSameXforY(sliderPoints[pointer[i]],sliderPoints[pointer[j]]) ) { // bound for possible collisions
+			
 			debugPrint(" point (" + sliderPoints[pointer[i]].getX() + "," + sliderPoints[pointer[i]].getY() + ") may collide with ("
 					+ sliderPoints[pointer[j]].getX() + "," + sliderPoints[pointer[j]].getY() + ")");
+			
 			if ((sliderPoints[pointer[i]].getNEWLeftX() < sliderPoints[pointer[j]].getNEWRightX())
 					&& ((sliderPoints[pointer[i]].getNEWTopY() >= sliderPoints[pointer[j]].getNEWTopY() && sliderPoints[pointer[i]].getY() <= sliderPoints[pointer[j]]
 							.getNEWTopY()) || sliderPoints[pointer[i]].getNEWTopY() >= sliderPoints[pointer[j]].getY()

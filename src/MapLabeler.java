@@ -54,7 +54,7 @@ public class MapLabeler {
 	public MapLabeler() throws IOException{
 		pModel = PlacementModel.FOURPOS;
 		String testing = "4pos";
-		File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v"+System.currentTimeMillis()+".csv");
+		File outputFile = new File("lerandomshizzang");
 		outputFile.createNewFile();
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 		String s = "";
@@ -74,7 +74,7 @@ public class MapLabeler {
 		writer.newLine();
 		for(int points = 10000; points <= 10000; points += 100){
 			System.out.println(points);
-			for(int test = 1; test <= 10; test++){
+			for(int test = 1; test <= 1; test++){
 				//System.out.println(test);
 				maxHeight = 0;
 				realHeight = 0;
@@ -92,8 +92,10 @@ public class MapLabeler {
 				totalAvg2SatTime = 0;//
 				totalMaxColTime = 0;//
 				totalMax2SatTime = 0;//
-				input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
-				output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
+			//	input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
+			//	output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
+				input = new File("D:\\workspace\\git\\2io90-algorithms2\\2pos100.txt");
+				output = new File("2pos100_solved.txt");
 				for(int iteration = 0; iteration < repeat; iteration++){
 					avgColTimeLoop = 0;
 					maxColTimeLoop = 0;
