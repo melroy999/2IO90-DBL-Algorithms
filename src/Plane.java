@@ -36,8 +36,8 @@ public class Plane {
 	private PosPoint[] posPoints;
 	
 	private double delta = 0.001;// difference of border
-	private boolean debug = true;
-	
+	private boolean debug = !true;
+
 	public Plane(double aspectRatio, SliderPoint[] points, PlacementModel pModel) {
 		this.aspectRatio = aspectRatio;
 		this.numberOfPoints = points.length;
@@ -309,8 +309,294 @@ public class Plane {
 
 		MapLabeler.realHeight = (float) height;
 
-		return posPoints;// return the array of points, now with correct
+		//return posPoints;// return the array of points, now with correct
+							// positions.		
+		return posPoints;
+	}
+	
+	
+	public PosPoint[] find2PosSolution(int rotation) {
+		//System.out.println(posPoints);
+		String[] shittyPoePoe = new String[posPoints.length];
+		for(int i = 0; i < posPoints.length; i++){
+			//System.out.print(posPoints[i]);
+			shittyPoePoe[i]=posPoints[i].toString();
+		}
+		
+		posPoints = RotatePlane(rotation, posPoints);
+		
+		for(int i = 0; i < posPoints.length; i++){
+			//System.out.print(posPoints[i]+ " ");
+		}
+		
+		double aspectRatioOriginal = aspectRatio;
+		
+		if(rotation == 90 || rotation == 270){
+			aspectRatio = 1/aspectRatio;
+		}
+		
+		int[] xSortedOrder = MergeSort.sort(posPoints);// sorting the points onx-cor, referencing by index in this array.
+
+		// int range = 10000;//the range of the coordinates from 0 to range
+
+		double minHeight = (aspectRatio <= 1) ? 1d : (1d / (2d * aspectRatio));// minimal height
+		// TODO is it really true that 2*aspectRatio for 2Pos solution? can't all labels be put in the same orientation,
+		// TODO and still not cause overlap? all points have at least 1x1 free space, no matter the location, as long as all
+		// TODO labels are orientated the same way, which is the simplest and minimal solution.
+		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);// find the max height
+
+		MapLabeler.maxHeight = (float) maxHeight;
+
+		height = maxHeight;// height to use initially is the max height.
+		double lastHeight = 0;// a value to find out if you are checking for the same height twice in succession.
+
+		clauseToPoint = new HashMap<ClauseValue, PosPoint>();// make a new mapping connecting clauseValues with points.
+
+		rangeX = posPoints[xSortedOrder[xSortedOrder.length - 1]].getX();
+
+		ArrayList<Label> allLabels = new ArrayList<Label>();
+
+		for (int i = 0; i < xSortedOrder.length; i++) {// make the top allLabels for all points.
+			int pointer = xSortedOrder[i];
+			PosPoint p = posPoints[pointer];
+
+			if (p.getY() > rangeY) {
+				rangeY = p.getY();
+			}
+
+			if (i > 0) {
+				if (i < posPoints.length - 1) {
+					int indexToRight = i - 1;
+					boolean clean = true;
+					while (indexToRight <= posPoints.length - 1 && clean
+							&& posPoints[xSortedOrder[indexToRight]].getX() - p.getX() < 2 * maxHeight * aspectRatio) {
+						int difY = posPoints[xSortedOrder[indexToRight]].getY() - p.getY();
+						if (difY < maxHeight && difY >= 0) {
+							clean = false;
+							break;
+						}
+						indexToRight++;
+					}
+
+					if (!clean) {
+						Label NE = new Label(p, 1, true);
+						allLabels.add(NE);// shift=1 and top=true gives us the NE label;
+						clauseToPoint.put(NE.toClause(), p);
+
+						Label NW = new Label(p, 0, true);
+						allLabels.add(NW);// shift=1 and top=true gives us the NE label;
+						clauseToPoint.put(NW.toClause(), p);
+
+						clean = true;
+					} else {
+						p.setPosition(Orientation.NE);
+					}
+
+					if (!clean) {
+						int indexToLeft = i - 1;
+						clean = true;
+
+						while (indexToLeft >= 0 && clean && p.getX() - posPoints[xSortedOrder[indexToLeft]].getX() < 2 * maxHeight * aspectRatio) {
+							int difY = posPoints[xSortedOrder[indexToLeft]].getY() - p.getY();
+							if (difY < maxHeight && difY >= 0) {
+								clean = false;
+								break;
+							}
+							indexToLeft--;
+						}
+
+						if (!clean) {
+							Label NE = new Label(p, 1, true);
+							allLabels.add(NE);// shift=1 and top=true gives us the NE label;
+							clauseToPoint.put(NE.toClause(), p);
+
+							Label NW = new Label(p, 0, true);
+							allLabels.add(NW);// shift=1 and top=true gives us the NE label;
+							clauseToPoint.put(NW.toClause(), p);
+						} else {
+							p.setPosition(Orientation.NW);
+						}
+					}
+				} else {// i = posPoints.length-1
+					Label NE = new Label(p, 1, true);
+					allLabels.add(NE);// shift=1 and top=true gives us the
+										// NE label;
+					clauseToPoint.put(NE.toClause(), p);
+		
+					Label NW = new Label(p, 0, true);
+					allLabels.add(NW);// shift=1 and top=true gives us the NE label;
+					clauseToPoint.put(NW.toClause(), p);
+					
+					//p.setPosition(Orientation.NE);
+				}
+			} else {// i==0
+				Label NE = new Label(p, 1, true);
+				allLabels.add(NE);// shift=1 and top=true gives us the
+									// NE label;
+				clauseToPoint.put(NE.toClause(), p);
+	
+				Label NW = new Label(p, 0, true);
+				allLabels.add(NW);// shift=1 and top=true gives us the NE label;
+				clauseToPoint.put(NW.toClause(), p);
+				
+				//p.setPosition(Orientation.NW);
+			}
+
+		}
+		
+		
+		QuadTree quad = new QuadTree(0, new Rectangle(0, 0, rangeX + 1, rangeY + 1),false);// new quadtree with (top) level 0 and dimensions (range+1)^2
+
+		int loops = 0;
+
+		MapLabeler.initTime += (System.nanoTime() - MapLabeler.startTime);
+
+		while (lastHeight != height) {// as long as the height is not equal to
+										// the last checked height
+			debugPrint("Height: " + height + " lastHeight: " + lastHeight + " minHeight: " + minHeight + " maxHeight: " + maxHeight);
+			HashMap<PosPoint, Orientation> validOrientation = new HashMap<PosPoint, Orientation>();
+			ArrayList<Label> labels = new ArrayList<Label>(allLabels);// all labels will be stored in this arrayList.
+
+			// the additional clauses are required to fix the value of a dead
+			// label to the negation of the clauseValue of that label.
+			long time = System.nanoTime();
+			ArrayList<Clause> collisions = findCollisions2pos(labels, validOrientation, quad, height);
+
+			long collisionTime = (System.nanoTime() - time);
+			MapLabeler.avgColTimeLoop += collisionTime;
+			if (MapLabeler.maxColTimeLoop < collisionTime) {
+				MapLabeler.maxColTimeLoop = collisionTime;
+			}
+			// get the list of collisions
+
+			time = System.nanoTime();
+			if (checkTwoSatisfiability(collisions)) {// if a satisfiable
+														// configuration exists
+				if (minHeight <= height) {
+					minHeight = height;// this height will be valid, so the
+										// minimum height becomes this height.
+					debugPrint("2-Sat satisfies.");
+				}
+			} else {// if no solution can be found with 2-sat
+				if (maxHeight > height) {
+					maxHeight = height;
+					debugPrint("2-Sat is not satisfactory.");
+				}
+				// this height has no solution, so the maximum found height for
+				// which this does not work is now height
+			}
+
+			long satTime = (System.nanoTime() - time);
+			MapLabeler.avg2SatTimeLoop += satTime;
+			if (MapLabeler.max2SatTimeLoop < satTime) {
+				MapLabeler.max2SatTimeLoop = satTime;
+			}
+
+			debugPrint("new last height: " + height);
+			lastHeight = height;// remember which height was used this
+								// iteration.
+
+			/*
+			 * Calculate the next candidate value, considering that the distance between points is always an integer. This means that the height or the width (or both) MUST be divisible by 0.5.
+			 */
+
+			height = (maxHeight + minHeight) / 2;// calculate the average of the
+													// maxHeight and minHeight
+			double width = height * aspectRatio;// calculate the width.
+
+			debugPrint(">" + height + "," + width + ":" + roundToHalf(height) + "," + roundToHalf(width) + ":" + Math.abs(height - roundToHalf(height)) + ","
+					+ Math.abs(width - roundToHalf(width)));
+
+			// height =
+			// (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))?
+			// roundToHalf(height) : roundToHalf(width)/aspectRatio;
+
+			if (Math.abs(height - roundToHalf(height)) < Math.abs(width - roundToHalf(width))) {
+				if (roundToHalf(height) <= maxHeight && roundToHalf(height) >= minHeight) {
+					height = roundToHalf(height);
+				} else {
+					height = roundToHalf(width) / aspectRatio;
+				}
+			} else {
+				if (roundToHalf(width) / aspectRatio <= maxHeight && roundToHalf(width) / aspectRatio >= minHeight) {
+					height = roundToHalf(width) / aspectRatio;
+				} else {
+					height = roundToHalf(height);
+				}
+			}
+			// (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))):
+			// Find if the distance to next height or the next width is smaller
+			// than the other.
+			debugPrint("new height: " + height);
+			loops++;
+		}
+
+		MapLabeler.totalAvgColTime += MapLabeler.avgColTimeLoop;
+		if (MapLabeler.totalMaxColTime < MapLabeler.avgColTimeLoop) {
+			MapLabeler.totalMaxColTime = MapLabeler.avgColTimeLoop;
+		}
+		MapLabeler.avgColTimeLoop /= loops;
+
+		MapLabeler.totalAvg2SatTime += MapLabeler.avg2SatTimeLoop;
+		if (MapLabeler.totalMax2SatTime < MapLabeler.avg2SatTimeLoop) {
+			MapLabeler.totalMax2SatTime = MapLabeler.avg2SatTimeLoop;
+		}
+		MapLabeler.avg2SatTimeLoop /= loops;
+
+		MapLabeler.nrOfLoops += loops;
+
+		height = minHeight;// To be sure that we have a valid height, take the
+							// minHeight found.
+
+		debugPrint("Resulting height: " + height + ", " + maxHeight + ", " + minHeight);
+
+		long time = System.nanoTime();
+		if (minGraph != null) {// border case: solution is minimal height
+			Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));// the
+																		// depth
+																		// first
+																		// search
+																		// order
+																		// or
+																		// the
+																		// reverse
+																		// of
+																		// the
+																		// graph.
+
+			while (!order.isEmpty()) {// while elements in the order stack still
+										// exist.
+				ClauseValue next = order.pop();// pop the first element.
+				getNext(next);// check which elements this one is connected to.
+			}
+		}
+
+		for (PosPoint p : posPoints) {
+			if (p.getPosition() == null) {
+				p.setPosition(Orientation.NE);
+			}
+		}
+		MapLabeler.placementTime += (System.nanoTime() - time);
+
+		MapLabeler.realHeight = (float) height;
+
+		//return posPoints;// return the array of points, now with correct
 							// positions.
+		
+		posPoints = RestorePlane(rotation, posPoints);
+		
+		if(rotation == 90 || rotation == 270){
+			aspectRatio = aspectRatioOriginal;
+			height = height / aspectRatio;
+		}
+		
+		for(int i = 0; i < posPoints.length; i++){
+			if(!shittyPoePoe[i].equals(posPoints[i].toString())){
+				System.out.println(posPoints[i].toString() + ":" + shittyPoePoe[i]);
+			}
+		}
+		
+		return posPoints;
 	}
 
 	public double roundToHalf(double d) {
@@ -407,9 +693,10 @@ public class Plane {
 		
 		
 		ArrayList<Integer> labelsToProcessIndex = new ArrayList<Integer>();
+		ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
 		
 		int timeend = 290000;
-		//timeend = 10000;
+		//timeend = 5000;
 		
 		
 		int loops = 0;
@@ -418,7 +705,7 @@ public class Plane {
 			rangeX = posPoints[xSortedOrder[xSortedOrder.length - 1]].getX();
 
 			ArrayList<Label> labelsDone = new ArrayList<Label>();
-			ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
+			labelsDoneIndex = new ArrayList<Integer>();
 			ArrayList<PosPoint> labelsToProcess = new ArrayList<PosPoint>();
 			labelsToProcessIndex = new ArrayList<Integer>();
 
@@ -648,28 +935,49 @@ public class Plane {
 		
 		
 		Label[] processed = finalBest.getLabels();
-		Label[] result = new Label[processed.length + labelsFinalDone.size()];
 		
-		debugPrint("result size" + result.length);
 		
-		for(int i = 0; i < processed.length; i++){
-			if(labelsFinalIndex.size() > 0){
+		int size = 0;
+		if(labelsFinalIndex.size() > 0){ size += processed.length; }
+		else { size += labelsToProcessIndex.size();}
+		if(labelsFinalDone.size() > 0){ size += labelsFinalDone.size(); }
+		else { size += labelsDoneIndex.size();}
+		
+		Label[] result = new Label[size];
+		
+		
+		
+		if(labelsFinalIndex.size() > 0){
+			for(int i = 0; i < processed.length; i++){
 				int index = labelsFinalIndex.get(i);
 				result[index] = processed[i];
 			}
-			else {
+		}
+		else {
+			for(int i = 0; i < labelsToProcessIndex.size(); i++){
 				int index = labelsToProcessIndex.get(i);
 				result[index] = processed[i];
 			}
+		}
+		
+		
+		if(labelsFinalDone.size() > 0){
+			for(int i = 0; i < labelsFinalDone.size(); i++){
+				int index = labelsFinalDoneIndex.get(i);
+				result[index] = labelsFinalDone.get(i);
+			}
+		}
+		else {
+			for(int i = 0; i < labelsDoneIndex.size(); i++){
+				int index = labelsDoneIndex.get(i);
+				result[index] = processed[i];
+			}
+		}
 			
 			//System.out.println(index + " " + processed[i]);
 			
-		}
-		for(int i = 0; i < labelsFinalDone.size(); i++){
-			int index = labelsFinalDoneIndex.get(i);
-			//System.out.println(index + " " + labelsFinalDone.get(i));
-			result[index] = labelsFinalDone.get(i);
-		}
+		
+		
 		
 		labels = result;
 		debugPrint("Skipped by final optimalization: " + labelsFinalDone.size());
@@ -992,7 +1300,7 @@ public class Plane {
 	public SliderPoint[] find1SliderSolution() {
 		long time = System.nanoTime();
 		long lastCheck = MapLabeler.totalAvgColTime;
-		xPointArray = MergeSort.sort(sliderPoints);
+		xPointArray = MergeSort.sort(sliderPoints, true);
 		MapLabeler.initTime += (System.nanoTime() - time);
 
 		CalcSlider(sliderPoints, xPointArray);
@@ -1026,6 +1334,7 @@ public class Plane {
 			// System.out.println(saveD);
 			boolean mayContinue = true;
 			currentH = (maxH + minH) / 2;
+			//System.out.println(currentH);
 			debugPrint("Current: " + currentH);
 			for (i = sliderPoints.length - 1; i >= 0; i--) {
 				sliderPoints[pointer[i]].setNEWsize(currentH);
@@ -1047,6 +1356,9 @@ public class Plane {
 				sliderPoints[pointer[i]].setMayGrow(false);
 			}
 			debugPrint("new max and min: " + maxH + ", " + minH);
+			
+			if (saveD == maxH - minH) {System.out.println("Terminated vanwege delta statisch"); }
+			
 		}
 		MapLabeler.nrOfLoops = loops;
 
@@ -1090,7 +1402,7 @@ public class Plane {
 		// height = Math.floor(minH*1000000000)*1000000000;
 		// height = minH;
 		BigDecimal lel = new BigDecimal(minH);
-		lel = lel.setScale(15, RoundingMode.FLOOR);
+		lel = lel.setScale(14, RoundingMode.FLOOR);
 		height = lel.doubleValue();
 		for (i = sliderPoints.length - 1; i >= 0; i--) {
 			sliderPoints[pointer[i]].setNEWsize(height);
@@ -1106,6 +1418,14 @@ public class Plane {
 		}
 		MapLabeler.placementTime = (System.nanoTime() - time);
 	}
+	
+	boolean checkSameXforY(SliderPoint i, SliderPoint j) {
+		if ((i.getX() == j.getX()) && (i.getY() < j.getY())){
+				return true;
+
+		}
+		else {return false;}
+	}
 
 	boolean checkNewSituation(SliderPoint[] sArray, int[] pointer, int pointLoc) {
 		long time = System.nanoTime();
@@ -1119,9 +1439,11 @@ public class Plane {
 		} // the last label is always moveable
 		while (j >= 0
 				&& (sliderPoints[pointer[j]].getX() > sliderPoints[pointer[i]].getNEWLeftX()
-						- (sliderPoints[pointer[i]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX()))) { // bound for possible collisions
+						- (sliderPoints[pointer[i]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX())) && checkSameXforY(sliderPoints[pointer[i]],sliderPoints[pointer[j]]) ) { // bound for possible collisions
+			
 			debugPrint(" point (" + sliderPoints[pointer[i]].getX() + "," + sliderPoints[pointer[i]].getY() + ") may collide with ("
 					+ sliderPoints[pointer[j]].getX() + "," + sliderPoints[pointer[j]].getY() + ")");
+			
 			if ((sliderPoints[pointer[i]].getNEWLeftX() < sliderPoints[pointer[j]].getNEWRightX())
 					&& ((sliderPoints[pointer[i]].getNEWTopY() >= sliderPoints[pointer[j]].getNEWTopY() && sliderPoints[pointer[i]].getY() <= sliderPoints[pointer[j]]
 							.getNEWTopY()) || sliderPoints[pointer[i]].getNEWTopY() >= sliderPoints[pointer[j]].getY()
@@ -1162,6 +1484,26 @@ public class Plane {
 					MapLabeler.totalAvgColTime += System.nanoTime() - time;
 					return true; // if so, than you can move too
 				} else {
+					if (sliderPoints[pointer[i]].getX() == sliderPoints[pointer[j]].getX()) {
+						
+						sliderPoints[pointer[j]].revertChanges();
+						
+						sliderPoints[pointer[i]].setNEWLeftX(sliderPoints[pointer[i]].getNEWLeftX() - toShift);
+						sliderPoints[pointer[i]].setNEWRightX(sliderPoints[pointer[i]].getNEWRightX() - toShift);
+						sliderPoints[pointer[i]].setNEWDirection("LEFT");
+						
+						if (checkNewSituation(sliderPoints, pointer, i) == true) { // check if colliding label can move
+							sliderPoints[pointer[i]].setMayGrow(true);
+							debugPrint("  clear, the others made room");
+							return true; // if so, than you can move too
+						}	
+						else {
+							sliderPoints[pointer[i]].setMayGrow(false);
+							debugPrint("  not clear, the others couldnt made room");
+							return false;
+						}
+						
+					}
 					sliderPoints[pointer[i]].setMayGrow(false);
 					debugPrint("  not clear, the others couldnt made room");
 					MapLabeler.totalAvgColTime += System.nanoTime() - time;
@@ -1724,5 +2066,65 @@ public class Plane {
 		 */
 		
 		return amount;
+	}
+
+	public PosPoint[] RotatePlane(int degree, PosPoint[] posPoints){
+		PosPoint[] newPoints = new PosPoint[posPoints.length];
+		if(degree==0){
+			return posPoints;
+		} else {
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				newPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), degree), rotateY(p.getX(), p.getY(), degree));
+			}
+		}
+		return newPoints;
+	}
+	
+	public int rotateX(int x, int y, int degree){
+		x = x - 5000;
+		y = y - 5000;
+		return (int)Math.round(x*Math.cos(Math.toRadians(degree))-y*Math.sin(Math.toRadians(degree))) + 5000;
+	}
+	
+	public int rotateY(int x, int y, int degree){
+		x = x - 5000;
+		y = y - 5000;
+		return (int)Math.round(y*Math.cos(Math.toRadians(degree))+x*Math.sin(Math.toRadians(degree))) + 5000;
+	}
+	
+	public PosPoint[] RestorePlane(int degree, PosPoint[] posPoints){
+		PosPoint[] oldPoints = new PosPoint[posPoints.length];
+		if(degree==0){
+			return posPoints;
+		} else if(degree==90){
+			HashMap<Orientation, Orientation> convertTable = new HashMap<Orientation, Orientation>();
+			convertTable.put(Orientation.NE, Orientation.SE);
+			convertTable.put(Orientation.NW, Orientation.NE);
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				oldPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), -degree), rotateY(p.getX(), p.getY(), -degree));
+				oldPoints[i].setPosition(convertTable.get(p.getPosition()));
+			}
+		} else if(degree==180){
+			HashMap<Orientation, Orientation> convertTable = new HashMap<Orientation, Orientation>();
+			convertTable.put(Orientation.NE, Orientation.SW);
+			convertTable.put(Orientation.NW, Orientation.SE);
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				oldPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), -degree), rotateY(p.getX(), p.getY(), -degree));
+				oldPoints[i].setPosition(convertTable.get(p.getPosition()));
+			}
+		} else {
+			HashMap<Orientation, Orientation> convertTable = new HashMap<Orientation, Orientation>();
+			convertTable.put(Orientation.NE, Orientation.NW);
+			convertTable.put(Orientation.NW, Orientation.SW);
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				oldPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), -degree), rotateY(p.getX(), p.getY(), -degree));
+				oldPoints[i].setPosition(convertTable.get(p.getPosition()));
+			}
+		}
+		return oldPoints;
 	}
 }
