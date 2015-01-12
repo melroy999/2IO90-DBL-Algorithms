@@ -54,7 +54,8 @@ public class MapLabeler {
 	public MapLabeler() throws IOException{
 		pModel = PlacementModel.FOURPOS;
 		String testing = "4pos";
-		File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v"+System.currentTimeMillis()+".csv");
+		File outputFile = new File("output_stats.txt");
+		//File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v"+System.currentTimeMillis()+".csv");
 		outputFile.createNewFile();
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 		String s = "";
@@ -92,8 +93,10 @@ public class MapLabeler {
 				totalAvg2SatTime = 0;//
 				totalMaxColTime = 0;//
 				totalMax2SatTime = 0;//
-				input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
-				output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
+				input = new File("pointsamm_3700.txt");
+				output = new File("pointsamm_3700_sol.txt");
+				//input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
+				//output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
 				for(int iteration = 0; iteration < repeat; iteration++){
 					avgColTimeLoop = 0;
 					maxColTimeLoop = 0;
