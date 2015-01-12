@@ -38,7 +38,7 @@ public class Plane {
 
 
 	private double delta = 0.001;// difference of border
-	private boolean debug = true;
+	private boolean debug = !true;
 
 	public Plane(double aspectRatio, SliderPoint[] points, PlacementModel pModel) {
 		this.aspectRatio = aspectRatio;
