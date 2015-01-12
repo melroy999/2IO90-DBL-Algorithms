@@ -75,7 +75,7 @@ public class MapLabeler {
 		}
 		writer.write(s);
 		writer.newLine();
-		for(int points = 100; points <= 1000; points += 100){
+		for(int points = 100; points <= 100; points += 100){
 			System.out.println(points);
 			for(int test = 1; test <= 20; test++){
 				//System.out.println(test);
@@ -95,10 +95,12 @@ public class MapLabeler {
 				totalAvg2SatTime = 0;//
 				totalMaxColTime = 0;//
 				totalMax2SatTime = 0;//
-
-				input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
-				output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
-				for(int iteration = 0; iteration < repeat; iteration++){
+				
+				input = new File("pointsamm_100.txt");
+				output = new File("w000t.txt");
+				//input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
+				//output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
+				for(int iteration = 0; iteration < 1; iteration++){
 					avgColTimeLoop = 0;
 					maxColTimeLoop = 0;
 					avg2SatTimeLoop = 0;
