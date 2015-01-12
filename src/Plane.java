@@ -341,9 +341,7 @@ public class Plane {
 	private Orientation from;
 	private Orientation to;
 	boolean print = false;
-	boolean print2 = !true;
-	boolean print3 = false;
-
+	
 	Orientation initial;
 
 	public Label[] find4PosSolutionSA(){
@@ -448,7 +446,6 @@ public class Plane {
 					}
 					indexLeft--;
 				}
-				if(print3) debugPrint("       " + p + ": " + free);
 					
 				if(free){
 					labelsDone.add(new Label(p,1,true));
@@ -461,9 +458,6 @@ public class Plane {
 				
 				
 			}
-			
-			if(print3) debugPrint("Done " + labelsDone.size());
-			if(print3) debugPrint("To Process " + labelsToProcess.size());
 			
 			
 			
@@ -554,48 +548,14 @@ public class Plane {
 						
 						
 					}
-					
-					
-					
-					
 					neighbourEnergy = calculateScore(quad, currentEnergy, lChanged, before, after);
-					
-					//int old = oldIntersect(false);
-					//if(old != neighbourEnergy){
-					//	if(print)debugPrint("fout: old " + old + " vs new " + neighbourEnergy);
-					//	oldIntersect(true);
-					//}
-					
-					
-					
 					if(neighbourEnergy < bestEnergy){
 						labels = newSolution.getLabels();
-						//if(oldIntersect(false) != neighbourEnergy){
-							//System.out.println("Changed: " + lChanged);
-						//	oldIntersect(true);
-						//}
 					}
 					
 					if (calculateAcceptance(currentEnergy, neighbourEnergy, temp) > r.nextDouble()) {
 						current = newSolution;
 						currentEnergy = neighbourEnergy;
-						
-						//labels = newSolution.getLabels();
-						/*if(finalIntersectionTest(false) != currentEnergy){
-							
-							if(print)debugPrint("####################################################");
-							if(print)debugPrint("############  EN WEL GODVERDOMME  ##################");
-							if(print)debugPrint("####################################################");
-							
-							//labels = current
-							labels = newSolution.getLabels();
-							if(print2) debugPrint(finalIntersectionTest(print) + "");
-							//ietsmeteentest(current.getLabels());
-							
-							if(print)debugPrint("");
-							
-						}*/
-						
 		            }
 					else {
 						if(print)debugPrint("    changeback");
@@ -619,36 +579,24 @@ public class Plane {
 		            }
 					
 					temp *= 1-coolingRate;
-				//}
-			}
+				}
 			}
 			
 			if(bestEnergy == 0){
 				labels = best.getLabels();
-				//if(finalIntersectionTest(false) != 0){
-				//	debugPrint("EN WEL GODVERDOMME");
+				if(finalHeight < height){
+					finalBest = new LabelConfiguration(best.getLabels());
+					finalHeight = height;
+					
+					labelsFinalIndex = labelsToProcessIndex;
+					labelsFinalDone = labelsDone;
+					labelsFinalDoneIndex = labelsDoneIndex;
 					
 					
-				//	height = height-1;
-					
-					
-					
-				//}
-				//else {
-					
-					if(finalHeight < height){
-						finalBest = new LabelConfiguration(best.getLabels());
-						finalHeight = height;
-						
-						labelsFinalIndex = labelsToProcessIndex;
-						labelsFinalDone = labelsDone;
-						labelsFinalDoneIndex = labelsDoneIndex;
-						
-						
-						debugPrint("NEW FINAL HEIGHT");
-						//break;
-					}
-					minHeight = height;
+					debugPrint("NEW FINAL HEIGHT");
+					//break;
+				}
+				minHeight = height;
 				//}
 			}
 			else {
@@ -660,16 +608,8 @@ public class Plane {
 			
 			
 			lastHeight = height;
-			//height = (maxHeight+minHeight)/2;//height to use is the average of max and min height
-			//double width = height * aspectRatio;
-			//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
-			
 			height = (maxHeight+minHeight)/2;//calculate the average of the maxHeight and minHeight
 			width = height * aspectRatio;//calculate the width.
-
-			//debugPrint(">" + height + "," + width + ":" + roundToHalf(height) + "," + roundToHalf(width) + ":" + Math.abs(height-roundToHalf(height)) + "," + Math.abs(width-roundToHalf(width)));
-			
-			//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
 			
 			if(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))){
 				if(roundToHalf(height)<=maxHeight && roundToHalf(height) >= minHeight){
@@ -700,8 +640,6 @@ public class Plane {
 		}
 		
 		debugPrint("FINAL HEIGHT: " + height);
-		//debugPrint("FINAL BEST: " + finalBest);
-		
 		
 		
 		Label[] processed = finalBest.getLabels();
