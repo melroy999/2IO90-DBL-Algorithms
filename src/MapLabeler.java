@@ -3,7 +3,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
 
@@ -22,8 +24,8 @@ public class MapLabeler {
 	
 	
 
-	//private File input;
-	//private File output;
+	/*private File input;
+	private File output;*/
 
 	private File input = new File("2pos100.txt");
 	private File output = new File("2pos100_solved.txt");
@@ -41,12 +43,15 @@ public class MapLabeler {
 	
 	public static final long start = System.currentTimeMillis();
 
+	private ArrayList<Long> times = new ArrayList<Long>();
+	
+	
 	public MapLabeler() throws IOException{
-		//for(int points = 900; points <= 1000; points += 100){
-			//System.out.print(points + " ");
-			//for(int test = 1; test <= 10; test++){
-				//input = new File("tests/4pos/test" + test + "/pointsamm_" + points + ".txt");
-				//output = new File("tests/4pos/test" + test + "/pointsamm_" + points + "_solved.txt");
+		/*for(int points = 100; points <= 10000; points += 100){
+			System.out.print(points + " ");
+			for(int test = 1; test <= 10; test++){*/
+				/*input = new File("tests/2pos/test" + test + "/pointsamm_" + points + ".txt");
+				output = new File("tests/2pos/test" + test + "/pointsamm_" + points + "_solved.txt");*/
 				
 				try{
 					if(local){
@@ -61,22 +66,40 @@ public class MapLabeler {
 				}
 			    try {
 					readInput();
-					//long start = System.currentTimeMillis();
-					solvePlacementProblem();
-					writeOutput();
-					long stop = System.currentTimeMillis();
-					long time = (stop - start);
-					System.out.print(time + " ");
+
+					times.clear();
+					for(int iteration = 0; iteration < 1; iteration++){
+						long start = System.currentTimeMillis();
+						solvePlacementProblem();
+						writeOutput();
+						long stop = System.currentTimeMillis();
+						long time = (stop - start);
+						times.add(time);
+					}
+					System.out.print(calculateAverage(times) + " ");
+
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
-			//}
-			//System.out.println();
-		//}
+			/*}
+			System.out.println();
+		}*/
 	    
 	}
+	
+	private double calculateAverage(List <Long> marks) {
+		  long sum = 0;
+		  if(!marks.isEmpty()) {
+		    for (long mark : marks) {
+		        sum += mark;
+		    }
+		    return (double)sum / marks.size();
+		  }
+		  return sum;
+		}
+	
 
 	public void readInput() throws Exception{
 		sc.useLocale(Locale.US);
@@ -151,7 +174,7 @@ public class MapLabeler {
 			bw.newLine();
 			bw.write("number of points: " + plane.getNumberOfPoints());
 			bw.newLine();
-			bw.write("label height: " + plane.getHeight());
+			bw.write("height: " + plane.getHeight());
 			bw.newLine();
 			if(pModel == PlacementModel.ONESLIDER){
 				SliderPoint[] s = plane.getSliderPoints();
@@ -180,7 +203,7 @@ public class MapLabeler {
 			System.out.println("placement model: " + pModel.toString());
 			System.out.println("aspect ratio: " + plane.getAspectRatio());
 			System.out.println("number of points: " + plane.getNumberOfPoints());
-			System.out.println("label height: " + plane.getHeight());
+			System.out.println("height: " + plane.getHeight());
 			if(pModel == PlacementModel.ONESLIDER){
 				SliderPoint[] s = plane.getSliderPoints();
 				for(int i=0; i<s.length; i++){

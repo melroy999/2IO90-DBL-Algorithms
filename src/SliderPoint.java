@@ -25,6 +25,7 @@ public class SliderPoint extends Point {
 		mayGrow = false;
 	}
 	
+	/*--Getters and Setters--*/
 	public void setLeftX(double x)	{ leftX = x;}
 	public double getLeftX()		{return leftX;}
 	
@@ -58,6 +59,8 @@ public class SliderPoint extends Point {
 		return NEWdirection.toString();
 	}
 	
+	
+	/*--Calculate values based on the current situation--*/
 	public double getS(){
 		if (rightX-leftX == 0) { System.out.println("WTF M8");}
 		double s = (rightX-this.getX())/(rightX-leftX);

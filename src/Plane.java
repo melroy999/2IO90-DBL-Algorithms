@@ -1,3 +1,4 @@
+
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
 import java.math.BigDecimal;
@@ -26,8 +27,6 @@ public class Plane {
 
 	private HashMap<ClauseValue, Integer> connectedComponents;//saves the connected component number the clauseValue is part of.
 	private DirectedGraph minGraph;//saves the graph of the iteration with a solvable situation.
-	private HashMap<PosPoint, Orientation> validConfiguration;//stores the already chosen labels in a solvable situation.
-
 	private Map<ClauseValue, PosPoint> clauseToPoint;//easily find the point connected to a clauseValue.
 
 	private SliderPoint[] sliderPoints;
@@ -56,11 +55,6 @@ public class Plane {
 		}
 	}
 
-	public void addLabel(Label label, ArrayList<Label> labels){
-		label.getBoundPoint().addLabel(label);
-		labels.add(label);
-	}
-
 	/**
 	 * 
 	 * @return The solution to the 2pos problem. It first calculates the maximum height
@@ -73,7 +67,11 @@ public class Plane {
 		int range = 10000;//the range of the coordinates from 0 to range
 		QuadTree quad = new QuadTree(0, new Rectangle(0,0,range+1,range+1));//new quadtree with (top) level 0 and dimensions (range+1)^2
 
-		double minHeight = (aspectRatio < 1) ? 1 : (1/aspectRatio);//minimal height		
+
+		double minHeight = (aspectRatio <= 1) ? 1d : (1d/(2d*aspectRatio));//minimal height
+		//TODO is it really true that 2*aspectRatio for 2Pos solution? can't all labels be put in the same orientation,
+		//TODO and still not cause overlap? all points have at least 1x1 free space, no matter the location, as long as all 
+		//TODO labels are orientated the same way, which is the simplest and minimal solution.
 		double maxHeight = MaxSize.getMaxPossibleHeight(posPoints, xSortedOrder, aspectRatio, PlacementModel.TWOPOS);//find the max height
 		height = maxHeight;//height to use initially is the max height.
 		double lastHeight = 0;//a value to find out if you are checking for the same height twice in succession.
@@ -84,15 +82,16 @@ public class Plane {
 
 		for(PosPoint p :posPoints){//make the top labels for all points.
 			Label NE = new Label(p, 1, true);
-			addLabel(NE, allLabels);//shift=1 and top=true gives us the NE label;
+			allLabels.add(NE);//shift=1 and top=true gives us the NE label;
 			clauseToPoint.put((NE).toClause(), p);
 
 			Label NW = new Label(p, 0, true);
-			addLabel(NW, allLabels);//shift=0 and top=true gives us the NW label;
+			allLabels.add(NW);//shift=1 and top=true gives us the NE label;
 			clauseToPoint.put((NW).toClause(), p);
 		}
 
 		while(lastHeight != height){//as long as the height is not equal to the last checked height
+			debugPrint("Height: " + height + " lastHeight: " + lastHeight + " minHeight: " + minHeight + " maxHeight: " + maxHeight);
 			HashMap<PosPoint, Orientation> validOrientation = new HashMap<PosPoint, Orientation>();
 			ArrayList<Label> labels = new ArrayList<Label>(allLabels);//all labels will be stored in this arrayList. 	
 			ArrayList<Clause> clauses = new ArrayList<Clause>();//a list which will initially contain additional clauses.
@@ -104,14 +103,15 @@ public class Plane {
 			if (collisions!=null){//collisions will return null if a point with only dead labels exists
 				clauses.addAll(getClauses(collisions));//add the clauses generated with the collisions to the clauses list.
 				if(checkTwoSatisfiability(clauses)){//if a satisfiable configuration exists
-					if(minHeight<height){
+					if(minHeight <= height){
 						minHeight = height;//this height will be valid, so the minimum height becomes this height.
-						validConfiguration = new HashMap<PosPoint, Orientation>(validOrientation);
+						debugPrint("2-Sat satisfies.");
 					}
 				}
 				else{//if no solution can be found with 2-sat
 					if(maxHeight > height){
 						maxHeight = height;
+						debugPrint("2-Sat is not satisfactory.");
 					}
 					//this height has no solution, so the maximum found height for which this does not work is now height
 				}
@@ -119,10 +119,12 @@ public class Plane {
 			else {//if a point has only dead labels
 				if(maxHeight > height){
 					maxHeight = height;
+					debugPrint("A label is dead.");
 				}
 				//this height has no solution, so the maximum found height for which this does not work is now height
 			}
-
+			
+		    debugPrint("new last height: " + height);
 			lastHeight = height;//remember which height was used this iteration.
 
 			/*
@@ -133,24 +135,42 @@ public class Plane {
 			height = (maxHeight+minHeight)/2;//calculate the average of the maxHeight and minHeight
 			double width = height * aspectRatio;//calculate the width.
 
-			height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
+			debugPrint(">" + height + "," + width + ":" + roundToHalf(height) + "," + roundToHalf(width) + ":" + Math.abs(height-roundToHalf(height)) + "," + Math.abs(width-roundToHalf(width)));
+			
+			//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
+			
+			if(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))){
+				if(roundToHalf(height)<=maxHeight && roundToHalf(height) >= minHeight){
+					height = roundToHalf(height);
+				}
+				else{
+					height = roundToHalf(width)/aspectRatio;
+				}
+			}
+			else{
+				if(roundToHalf(width)/aspectRatio<=maxHeight && roundToHalf(width)/aspectRatio >= minHeight){
+					height = roundToHalf(width)/aspectRatio;
+				}
+				else{
+					height = roundToHalf(height);
+				}
+			}
 			//(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))): 
 			//	Find if the distance to next height or the next width is smaller than the other.
+			debugPrint("new height: " + height);
 		}
 
 		height = minHeight;//To be sure that we have a valid height, take the minHeight found.
 
-		for(PosPoint p : posPoints){//check for all points if there exists a valid label placement already.
-			if(validConfiguration.containsKey(p)){
-				p.setPosition(validConfiguration.get(p));//if so, set the position to the given value.
+		debugPrint("Resulting height: " + height + ", " + maxHeight + ", " + minHeight);
+		
+		if(minGraph!=null){
+			Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));//the depth first search order or the reverse of the graph.
+		
+			while(!order.isEmpty()){//while elements in the order stack still exist.
+				ClauseValue next = order.pop();//pop the first element.
+				getNext(next);//check which elements this one is connected to.
 			}
-		}
-
-		Stack<ClauseValue> order = dfsOrder(reverseGraph(minGraph));//the depth first search order or the reverse of the graph.
-
-		while(!order.isEmpty()){//while elements in the order stack still exist.
-			ClauseValue next = order.pop();//pop the first element.
-			getNext(next);//check which elements this one is connected to.
 		}
 		
 		for(PosPoint p : posPoints){
@@ -158,8 +178,49 @@ public class Plane {
 				p.setPosition(Orientation.NE);
 			}
 		}
+		
 
+		if(debug){
+			testValidity2Pos(posPoints);
+		}
+		
 		return posPoints;//return the array of points, now with correct positions.
+	}
+	
+	public void testValidity2Pos(PosPoint[] points){
+		Label[] labels = new Label[points.length];
+		boolean clean = true;
+		
+		for(int i = 0 ; i < points.length ; i++){
+			if(points[i].getPosition().equals(Orientation.NW)){
+				labels[i] = new Label(points[i],0,true);
+			}
+			else{
+				labels[i] = new Label(points[i],1,true);
+			}
+			
+			double top = labels[i].getBoundPoint().getY() + (labels[i].isTop() ? height : 0);
+	        double bottom = top - height;
+	        double right = labels[i].getBoundPoint().getX() + (height * aspectRatio * labels[i].getShift());
+	        double left = right - (height * aspectRatio);
+	            
+	        Rectangle2D rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+	        labels[i].setRect(rect);
+		}
+		
+		
+		for(int i = 0 ; i < points.length ; i++){
+			for(int j = 0 ; j < points.length ; j++){
+				if(i!=j){
+					if(labels[i].getRect().intersects(labels[j].getRect())){
+						System.out.println(points[i].toString() + " intersects with " + points[j].toString());
+						clean = false;
+					}
+				}
+			}
+		}
+		
+		System.out.println("collisions found: " + !clean);
 	}
 
 	public double roundToHalf(double d){
@@ -679,15 +740,16 @@ public class Plane {
 		int i;																									//sliderPoints must be sorted on x-coordinates
 		double minH = 0;
 		double maxH = MaxSize.getMaxPossibleHeight(sArray, pointer, aspectRatio, PlacementModel.ONESLIDER);
+		//double maxH = 10000/aspectRatio;
+		debugPrint("First upper bound: " + maxH);
 		double T = 0.01;
-		delta= 0.00000000000001; //maxH/(Math.pow(2,(1000/(sArray.length * T))));
-		//System.out.println("Precision: " + delta);
-		//System.out.println("MaxSize gives: " + maxH);
+		delta= 0.000000000000001; //maxH/(Math.pow(2,(1000/(sArray.length * T))));
+		//debugPrint("Precision: " + delta);
+		//debugPrint("MaxSize gives: " + maxH);
 		double currentH;
 		double saveD = 0;
 		while ((maxH-minH >= delta) && (System.currentTimeMillis() - MapLabeler.start <= 10000) && (saveD != maxH-minH) ) {
 			saveD = maxH - minH;
-			System.out.println(saveD);
 			boolean mayContinue = true;
 			currentH = (maxH + minH)/2;
 			debugPrint("Current: " + currentH);
@@ -712,7 +774,7 @@ public class Plane {
 		}
 
 		//FINAL LOOP TO PLACE ALL LABELS FOR THE MAX HEIGHT
-		//Calculate rounded height or width
+		//Calculate final height or width
 		debugPrint("____________________LAST LOOP_________________________");
 		//		for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].setNEWsize(minH);}
 		//		double MAXh = minH;
@@ -732,7 +794,7 @@ public class Plane {
 			if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
 				if ( checkNewSituation(sliderPoints, xPointArray, i) == false ) {				//check if the new situation would work																//current becomes up
 					i = -1;																		
-					System.out.println("WOOPS1");						//NIET GOED HELEMAAL NIET GOED
+					debugPrint("WOOPS1");						//NIET GOED HELEMAAL NIET GOED
 				}
 			}
 		}
@@ -744,37 +806,39 @@ public class Plane {
 		//height = Math.floor(minH*1000000000)*1000000000;
 		//height = minH;
 		BigDecimal lel = new BigDecimal(minH);
-		lel = lel.setScale(14, RoundingMode.FLOOR);
+		lel = lel.setScale(15, RoundingMode.FLOOR);
 		height = lel.doubleValue();
 		for (i = sliderPoints.length -1; i >= 0; i--) {sliderPoints[pointer[i]].setNEWsize(height);}
 		for (i = sliderPoints.length -1; i >= 0; i--) {											//for every point, from right to left
 			if ( sliderPoints[pointer[i]].getMayGrow() != true ) {								//if it doesn't have clearance to grow yet
 				if ( checkNewSituation(sliderPoints, xPointArray, i) == false ) {				//check if the new situation would work																//current becomes up
 					i = -1;																		
-					System.out.println("WOOPS2");						//NIET GOED HELEMAAL NIET GOED
+					debugPrint("WOOPS2");						//NIET GOED HELEMAAL NIET GOED
 				}
 			}
 		}
 	}
 
 	boolean checkNewSituation(SliderPoint[] sArray, int[] pointer, int pointLoc) {
-		int i = pointLoc;
-		int j = pointLoc - 1;
+		int i = pointLoc; 		//point currently examined (right)
+		int j = pointLoc - 1;	//point checked for collision with i (left)
 		if (i==0) {
 			debugPrint("clear, the last point");
-			sliderPoints[pointer[i]].setMayGrow(true);
+			sliderPoints[pointer[i]].setMayGrow(true); //the last label is always moveable		
 			return true;
-		}																//the last label is always moveable			
-		while (j >= 0  && (sliderPoints[pointer[j]].getX() > sliderPoints[pointer[i]].getNEWLeftX()- (sliderPoints[pointer[i]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX()))) {		//bound for possible collisions
+		}					
+							//bound for possible collisions
+		while (j >= 0  && (sliderPoints[pointer[j]].getX() > sliderPoints[pointer[i]].getNEWLeftX()- (sliderPoints[pointer[i]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX()))) {
 			debugPrint(" point (" + sliderPoints[pointer[i]].getX() + "," + sliderPoints[pointer[i]].getY() + ") may collide with (" + sliderPoints[pointer[j]].getX() + "," + sliderPoints[pointer[j]].getY() + ")" );
-			if ( (sliderPoints[pointer[i]].getNEWLeftX() <  sliderPoints[pointer[j]].getNEWRightX()) &&
-					((sliderPoints[pointer[i]].getNEWTopY()  >= sliderPoints[pointer[j]].getNEWTopY()    &&
-					sliderPoints[pointer[i]].getY() 	   <= sliderPoints[pointer[j]].getNEWTopY())   ||
-					sliderPoints[pointer[i]].getNEWTopY()  >= sliderPoints[pointer[j]].getY() 		 &&
-					sliderPoints[pointer[i]].getY() 	   <= sliderPoints[pointer[j]].getY()) ) {			//check collision
+			if ( (sliderPoints[pointer[i]].getNEWLeftX() <  sliderPoints[pointer[j]].getNEWRightX()) &&		
+					((sliderPoints[pointer[i]].getNEWTopY()  > sliderPoints[pointer[j]].getNEWTopY()    &&
+					sliderPoints[pointer[i]].getY() 	   < sliderPoints[pointer[j]].getNEWTopY())   ||
+					sliderPoints[pointer[i]].getNEWTopY()  > sliderPoints[pointer[j]].getY() 		 &&
+					sliderPoints[pointer[i]].getY() 	   < sliderPoints[pointer[j]].getY()) ) {			//check collision
 
 				debugPrint("  collision detected");
 				double toShift = sliderPoints[pointer[j]].getNEWRightX() - sliderPoints[pointer[i]].getNEWLeftX();
+				debugPrint("toShift : " + toShift);
 				if (toShift <= (sliderPoints[pointer[j]].getNEWRightX() - sliderPoints[pointer[j]].getX())) {	//check if current label can shift
 					sliderPoints[pointer[j]].setNEWLeftX(sliderPoints[pointer[j]].getNEWLeftX() - toShift);
 					sliderPoints[pointer[j]].setNEWRightX(sliderPoints[pointer[j]].getNEWRightX() - toShift);
@@ -785,7 +849,7 @@ public class Plane {
 				//					sliderPoints[pointer[j]].setNEWLeftX(sliderPoints[pointer[j]].getNEWLeftX() - toShift);
 				//					sliderPoints[pointer[j]].setNEWRightX(sliderPoints[pointer[j]].getNEWRightX() - toShift);
 				//					sliderPoints[pointer[j]].setNEWDirection("LEFT");
-				//					System.out.println("MAXIMUM HEIGHT REACHED: " + (sliderPoints[pointer[i]].getTopY() - sliderPoints[pointer[i]].getY()) );
+				//					debugPrint("MAXIMUM HEIGHT REACHED: " + (sliderPoints[pointer[i]].getTopY() - sliderPoints[pointer[i]].getY()) );
 				//					return false;
 				//				}
 				else {
