@@ -3,7 +3,6 @@ import java.awt.geom.Rectangle2D;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,10 +35,9 @@ public class Plane {
 	public int[] xPointArray; // slider pointers
 	private PosPoint[] posPoints;
 
-
 	private double delta = 0.001;// difference of border
 	private boolean debug = !true;
-
+	
 	public Plane(double aspectRatio, SliderPoint[] points, PlacementModel pModel) {
 		this.aspectRatio = aspectRatio;
 		this.numberOfPoints = points.length;
@@ -341,9 +339,7 @@ public class Plane {
 	private Orientation from;
 	private Orientation to;
 	boolean print = false;
-	boolean print2 = !true;
-	boolean print3 = false;
-
+	
 	Orientation initial;
 
 	public Label[] find4PosSolutionSA(){
@@ -403,17 +399,21 @@ public class Plane {
 		ArrayList<Integer> labelsFinalDoneIndex = new ArrayList<Integer>();
 		
 		
+		ArrayList<Integer> labelsToProcessIndex = new ArrayList<Integer>();
+		
+		int timeend = 290000;
+		//timeend = 10000;
 		
 		
 		int loops = 0;
-		while(lastHeight != height && height != finalHeight){
+		while(lastHeight != height && height != finalHeight && (System.currentTimeMillis() - MapLabeler.start <= timeend)){
 			
 			rangeX = posPoints[xSortedOrder[xSortedOrder.length - 1]].getX();
 
 			ArrayList<Label> labelsDone = new ArrayList<Label>();
 			ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
 			ArrayList<PosPoint> labelsToProcess = new ArrayList<PosPoint>();
-			ArrayList<Integer> labelsToProcessIndex = new ArrayList<Integer>();
+			labelsToProcessIndex = new ArrayList<Integer>();
 
 			for (int i = 0; i < xSortedOrder.length; i++) {// make the top allLabels for all points.
 				int pointer = xSortedOrder[i];
@@ -444,7 +444,6 @@ public class Plane {
 					}
 					indexLeft--;
 				}
-				if(print3) debugPrint("       " + p + ": " + free);
 					
 				if(free){
 					labelsDone.add(new Label(p,1,true));
@@ -457,9 +456,6 @@ public class Plane {
 				
 				
 			}
-			
-			if(print3) debugPrint("Done " + labelsDone.size());
-			if(print3) debugPrint("To Process " + labelsToProcess.size());
 			
 			
 			
@@ -490,7 +486,7 @@ public class Plane {
 			
 			
 			
-			while(temp > 1 && bestEnergy > 0){
+			while(temp > 1 && bestEnergy > 0 && (System.currentTimeMillis() - MapLabeler.start <= timeend) ){
 				LabelConfiguration newSolution = current;
 				int position = (int) (newSolution.labelSize() * r.nextDouble());
 				
@@ -521,14 +517,12 @@ public class Plane {
 					//if(print) debugPrint(" change to " + lChanged.getOrientation());
 					
 					
-					int counter = 0;
 					from = initial;
 					to = newSolution.getLastTo();
 					boolean triedall = false;
 					if(print) System.out.println (" from: " + newSolution.getLastFrom());
 					if(print) debugPrint("To: " + newSolution.getLastTo() + " " + containsPoint2(after,lChanged, height));
 					while(!containsPoint2(after,lChanged, height).isEmpty()){
-						counter++;
 						if(options.size() == 0){
 							if(!triedall){
 								options.add(initial);
@@ -552,48 +546,14 @@ public class Plane {
 						
 						
 					}
-					
-					
-					
-					
 					neighbourEnergy = calculateScore(quad, currentEnergy, lChanged, before, after);
-					
-					//int old = oldIntersect(false);
-					//if(old != neighbourEnergy){
-					//	if(print)debugPrint("fout: old " + old + " vs new " + neighbourEnergy);
-					//	oldIntersect(true);
-					//}
-					
-					
-					
 					if(neighbourEnergy < bestEnergy){
 						labels = newSolution.getLabels();
-						//if(oldIntersect(false) != neighbourEnergy){
-							//System.out.println("Changed: " + lChanged);
-						//	oldIntersect(true);
-						//}
 					}
 					
 					if (calculateAcceptance(currentEnergy, neighbourEnergy, temp) > r.nextDouble()) {
 						current = newSolution;
 						currentEnergy = neighbourEnergy;
-						
-						//labels = newSolution.getLabels();
-						/*if(finalIntersectionTest(false) != currentEnergy){
-							
-							if(print)debugPrint("####################################################");
-							if(print)debugPrint("############  EN WEL GODVERDOMME  ##################");
-							if(print)debugPrint("####################################################");
-							
-							//labels = current
-							labels = newSolution.getLabels();
-							if(print2) debugPrint(finalIntersectionTest(print) + "");
-							//ietsmeteentest(current.getLabels());
-							
-							if(print)debugPrint("");
-							
-						}*/
-						
 		            }
 					else {
 						if(print)debugPrint("    changeback");
@@ -617,36 +577,24 @@ public class Plane {
 		            }
 					
 					temp *= 1-coolingRate;
-				//}
-			}
+				}
 			}
 			
 			if(bestEnergy == 0){
 				labels = best.getLabels();
-				//if(finalIntersectionTest(false) != 0){
-				//	debugPrint("EN WEL GODVERDOMME");
+				if(finalHeight < height){
+					finalBest = new LabelConfiguration(best.getLabels());
+					finalHeight = height;
+					
+					labelsFinalIndex = labelsToProcessIndex;
+					labelsFinalDone = labelsDone;
+					labelsFinalDoneIndex = labelsDoneIndex;
 					
 					
-				//	height = height-1;
-					
-					
-					
-				//}
-				//else {
-					
-					if(finalHeight < height){
-						finalBest = new LabelConfiguration(best.getLabels());
-						finalHeight = height;
-						
-						labelsFinalIndex = labelsToProcessIndex;
-						labelsFinalDone = labelsDone;
-						labelsFinalDoneIndex = labelsDoneIndex;
-						
-						
-						debugPrint("NEW FINAL HEIGHT");
-						//break;
-					}
-					minHeight = height;
+					debugPrint("NEW FINAL HEIGHT");
+					//break;
+				}
+				minHeight = height;
 				//}
 			}
 			else {
@@ -658,16 +606,8 @@ public class Plane {
 			
 			
 			lastHeight = height;
-			//height = (maxHeight+minHeight)/2;//height to use is the average of max and min height
-			//double width = height * aspectRatio;
-			//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
-			
 			height = (maxHeight+minHeight)/2;//calculate the average of the maxHeight and minHeight
 			width = height * aspectRatio;//calculate the width.
-
-			//debugPrint(">" + height + "," + width + ":" + roundToHalf(height) + "," + roundToHalf(width) + ":" + Math.abs(height-roundToHalf(height)) + "," + Math.abs(width-roundToHalf(width)));
-			
-			//height = (Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width)))? roundToHalf(height) : roundToHalf(width)/aspectRatio;
 			
 			if(Math.abs(height-roundToHalf(height))<Math.abs(width-roundToHalf(width))){
 				if(roundToHalf(height)<=maxHeight && roundToHalf(height) >= minHeight){
@@ -691,21 +631,32 @@ public class Plane {
 		
 		if(finalBest == null){
 			finalBest = best;
+			if(best == null){
+				finalBest = new LabelConfiguration(posPoints, height, aspectRatio);
+			}
 			debugPrint("NOT FOUND");
 		}
 		
 		debugPrint("FINAL HEIGHT: " + height);
-		debugPrint("FINAL BEST: " + finalBest);
-		
 		
 		
 		Label[] processed = finalBest.getLabels();
 		Label[] result = new Label[processed.length + labelsFinalDone.size()];
 		
+		debugPrint("result size" + result.length);
+		
 		for(int i = 0; i < processed.length; i++){
-			int index = labelsFinalIndex.get(i);
+			if(labelsFinalIndex.size() > 0){
+				int index = labelsFinalIndex.get(i);
+				result[index] = processed[i];
+			}
+			else {
+				int index = labelsToProcessIndex.get(i);
+				result[index] = processed[i];
+			}
+			
 			//System.out.println(index + " " + processed[i]);
-			result[index] = processed[i];
+			
 		}
 		for(int i = 0; i < labelsFinalDone.size(); i++){
 			int index = labelsFinalDoneIndex.get(i);

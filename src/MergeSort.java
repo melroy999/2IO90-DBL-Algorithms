@@ -11,13 +11,19 @@ import java.util.Arrays;
 public class MergeSort {
 	private static Point[] numbers;
 	private static Point[] helper;
-
+	private static boolean inverseY;
+	
 	private static int n;
 	private static int[] pointers;
 	private static int[] pointersHelper;
-
-	public static int[] sort(Point[] values) {
-		n = values.length;
+	
+	public static int[] sort(Point[] values){
+	    return sort(values, false);
+	}
+	
+	public static int[] sort(Point[] values, boolean inverseY) {
+		MergeSort.inverseY = inverseY;
+	    n = values.length;
 		numbers = Arrays.copyOf(values, n);
 		helper = new Point[n];
 		pointers = new int[n];
@@ -44,7 +50,7 @@ public class MergeSort {
 			merge(low, middle, high);
 		}
 	}
-
+	
 	private static void merge(int low, int middle, int high) {
 
 		// Copy both parts into the helper array
@@ -65,10 +71,15 @@ public class MergeSort {
 				i++;
 			} 
 			else if(helper[i].getX() == helper[j].getX()){
-			    if(helper[i].getY() <= helper[j].getY()){
+			    if(helper[i].getY() <= helper[j].getY() && !inverseY){
 			        numbers[k] = helper[i];
 			        pointers[k] = pointersHelper[i];
 			        i++;
+			    }
+			    else if(helper[i].getY() > helper[j].getY() && inverseY){
+			        numbers[k] = helper[i];
+                    pointers[k] = pointersHelper[i];
+                    i++;
 			    }
 			    else{
 			        numbers[k] = helper[j];

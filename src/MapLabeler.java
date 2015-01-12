@@ -54,7 +54,9 @@ public class MapLabeler {
 	public MapLabeler() throws IOException{
 		pModel = PlacementModel.FOURPOS;
 		String testing = "4pos";
+
 		File outputFile = new File("lerandomshizzang");
+
 		outputFile.createNewFile();
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 		String s = "";
@@ -96,6 +98,7 @@ public class MapLabeler {
 			//	output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
 				input = new File("D:\\workspace\\git\\2io90-algorithms2\\2pos100.txt");
 				output = new File("2pos100_solved.txt");
+
 				for(int iteration = 0; iteration < repeat; iteration++){
 					avgColTimeLoop = 0;
 					maxColTimeLoop = 0;
@@ -107,7 +110,6 @@ public class MapLabeler {
 							sc = new Scanner(input);
 						}
 						else{
-							System.out.println("Gib input pl0x");
 							sc = new Scanner(System.in);
 						}
 						readInput();
