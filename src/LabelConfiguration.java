@@ -31,6 +31,25 @@ public class LabelConfiguration {
         }
 	}
 	
+	public LabelConfiguration(PosPoint[] p, double height, double ratio){
+		
+		this.labels = new Label[p.length];
+		for (int i = 0; i < p.length; i++) {
+            this.labels[i] = new Label(p[i],r.nextBoolean() ? 1 : 0,r.nextBoolean());
+            
+            Label l = labels[i];
+    		double top = l.getBoundPoint().getY() + (l.isTop() ? height : 0);
+            double bottom = top - height;
+            double right = l.getBoundPoint().getX() + (height * ratio * l.getShift());
+            double left = right - (height * ratio);
+            
+            Rectangle2D.Double rect = new Rectangle2D.Double(left, bottom, right-left, top-bottom);
+            l.setRect(rect);
+            
+            
+        }
+	}
+	
 	public LabelConfiguration(Label[] config){
 		this.labels = new Label[config.length];
 		for(int i = 0; i < config.length; i++){
