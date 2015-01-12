@@ -58,10 +58,10 @@ public class SliderPoint extends Point {
 	}
 	
 	public double getS(){
-		if (rightX-leftX == 0) { System.out.println("WTF M8");}
+		if (rightX-leftX == 0) { System.out.println(rightX + " " + leftX + " " + this.getX());}
 		double s = (rightX-this.getX())/(rightX-leftX);
 		BigDecimal lel = new BigDecimal(String.valueOf(s));
-		lel = lel.setScale(14, RoundingMode.FLOOR);
+		lel = lel.setScale(7, RoundingMode.FLOOR);
 		s = lel.doubleValue();		
 		return s;
 	}
