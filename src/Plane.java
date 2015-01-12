@@ -34,7 +34,7 @@ public class Plane {
 	private SliderPoint[] sliderPoints;
 	public int[] xPointArray; // slider pointers
 	private PosPoint[] posPoints;
-
+	
 	private double delta = 0.001;// difference of border
 	private boolean debug = true;
 	
@@ -51,8 +51,8 @@ public class Plane {
 		this.numberOfPoints = points.length;
 		this.posPoints = points;
 		this.pModel = pModel;
-	}
-
+	}	
+	
 	public void debugPrint(String text) {
 		if (MapLabeler.local && debug) {
 			System.out.println(text);
@@ -343,14 +343,21 @@ public class Plane {
 	Orientation initial;
 
 	public Label[] find4PosSolutionSA(){
+	    //Cheats enabled 
+	    //JUMPJET driehoek driehoek vierkantje rondje kruisje l1 l1 down up
+	    PosPoint[] solution2Pos = find2PosSolution();
+	    double backupHeight = height;
+	    
+	    for(int i=1; i<4; i++){
+	        PosPoint[] temp = find2PosSolution(90*i);
+	    }
+	    
 		double coolingRate = 0.00003;
 		double initialTemp = 10000;
 		//double initialHeight = 250;
 		
 		
 		//int range = 10000;
-		
-		
 		
 		LabelConfiguration best = null;
 		int bestEnergy = Integer.MAX_VALUE;
