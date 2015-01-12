@@ -985,7 +985,7 @@ public class Plane {
 	public SliderPoint[] find1SliderSolution() {
 		long time = System.nanoTime();
 		long lastCheck = MapLabeler.totalAvgColTime;
-		xPointArray = MergeSort.sort(sliderPoints);
+		xPointArray = MergeSort.sort(sliderPoints, true);
 		MapLabeler.initTime += (System.nanoTime() - time);
 
 		CalcSlider(sliderPoints, xPointArray);
@@ -1107,6 +1107,7 @@ public class Plane {
 	boolean checkSameXforY(SliderPoint i, SliderPoint j) {
 		if ((i.getX() == j.getX()) && (i.getY() < j.getY())){
 				return true;
+
 		}
 		else {return false;}
 	}
@@ -1168,6 +1169,26 @@ public class Plane {
 					MapLabeler.totalAvgColTime += System.nanoTime() - time;
 					return true; // if so, than you can move too
 				} else {
+					if (sliderPoints[pointer[i]].getX() == sliderPoints[pointer[j]].getX()) {
+						
+						sliderPoints[pointer[j]].revertChanges();
+						
+						sliderPoints[pointer[i]].setNEWLeftX(sliderPoints[pointer[i]].getNEWLeftX() - toShift);
+						sliderPoints[pointer[i]].setNEWRightX(sliderPoints[pointer[i]].getNEWRightX() - toShift);
+						sliderPoints[pointer[i]].setNEWDirection("LEFT");
+						
+						if (checkNewSituation(sliderPoints, pointer, i) == true) { // check if colliding label can move
+							sliderPoints[pointer[i]].setMayGrow(true);
+							debugPrint("  clear, the others made room");
+							return true; // if so, than you can move too
+						}	
+						else {
+							sliderPoints[pointer[i]].setMayGrow(false);
+							debugPrint("  not clear, the others couldnt made room");
+							return false;
+						}
+						
+					}
 					sliderPoints[pointer[i]].setMayGrow(false);
 					debugPrint("  not clear, the others couldnt made room");
 					MapLabeler.totalAvgColTime += System.nanoTime() - time;

@@ -97,4 +97,10 @@ public class SliderPoint extends Point {
 		topY 	  = NEWtopY;
 		direction = NEWdirection;
 	}	
+	public void revertChanges(){
+		NEWleftX	= leftX 	   ;
+		NEWrightX	= rightX 	  ;
+		NEWtopY		= topY 	   ;
+		NEWdirection= direction  ;
+	}
 }
