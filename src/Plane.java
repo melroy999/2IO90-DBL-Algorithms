@@ -954,7 +954,10 @@ public class Plane {
 		
 		
 		debugPrint("Time for collision detection: " + timeColDect);
+		
 		if(height <= backupHeight){
+			result = new Label[solution2Pos.length];
+			labels = new Label[solution2Pos.length]; 
 		    height = backupHeight;
 		    for(int i=0; i<solution2Pos.length; i++){
 		        float s = (solution2Pos[i].getPosition() == Orientation.NE || solution2Pos[i].getPosition() == Orientation.SE)? 1 : 0;
@@ -1326,7 +1329,7 @@ public class Plane {
 		double maxH = MaxSize.getMaxPossibleHeight(sArray, pointer, aspectRatio, PlacementModel.ONESLIDER);
 		MapLabeler.maxHeight = (float) maxH;
 		double T = 0.01;
-		delta = 0.00000000000001; // maxH/(Math.pow(2,(1000/(sArray.length *
+		delta = 0.0000001; // maxH/(Math.pow(2,(1000/(sArray.length *
 									// T))));
 		// System.out.println("Precision: " + delta);
 		// System.out.println("MaxSize gives: " + maxH);
@@ -1408,7 +1411,7 @@ public class Plane {
 		// height = Math.floor(minH*1000000000)*1000000000;
 		// height = minH;
 		BigDecimal lel = new BigDecimal(minH);
-		lel = lel.setScale(14, RoundingMode.FLOOR);
+		lel = lel.setScale(7, RoundingMode.FLOOR);
 		height = lel.doubleValue();
 		for (i = sliderPoints.length - 1; i >= 0; i--) {
 			sliderPoints[pointer[i]].setNEWsize(height);

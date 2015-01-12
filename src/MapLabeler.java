@@ -23,7 +23,7 @@ public class MapLabeler {
 
 	public static final boolean local = true;
 
-	public static final long start = System.currentTimeMillis();
+	public static long start = System.currentTimeMillis();
 	
 	public static float maxHeight = 0;//
 	public static float realHeight = 0;//
@@ -49,13 +49,13 @@ public class MapLabeler {
 	
 	public static long startTime = 0;
 	
-	int repeat = 10;
+	int repeat = 1;
 
 	public MapLabeler() throws IOException{
 
 
-		pModel = PlacementModel.TWOPOS;
-		String testing = "2pos";
+		pModel = PlacementModel.FOURPOS;
+		String testing = "4pos";
 		File outputFile = new File("tests/"+testing+"/testResult_maxHeight_v"+System.currentTimeMillis()+".csv");
 
 		outputFile.createNewFile();
@@ -75,9 +75,9 @@ public class MapLabeler {
 		}
 		writer.write(s);
 		writer.newLine();
-		for(int points = 100; points <= 100; points += 100){
+		for(int points = 100; points <= 5000; points += 100){
 			System.out.println(points);
-			for(int test = 1; test <= 20; test++){
+			for(int test = 1; test <= 5; test++){
 				//System.out.println(test);
 				maxHeight = 0;
 				realHeight = 0;
@@ -96,10 +96,10 @@ public class MapLabeler {
 				totalMaxColTime = 0;//
 				totalMax2SatTime = 0;//
 				
-				input = new File("pointsamm_100.txt");
-				output = new File("w000t.txt");
-				//input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
-				//output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
+				//input = new File("pointsamm_100.txt");
+				//output = new File("w000t.txt");
+				input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
+				output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
 				for(int iteration = 0; iteration < 1; iteration++){
 					avgColTimeLoop = 0;
 					maxColTimeLoop = 0;
@@ -120,6 +120,7 @@ public class MapLabeler {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					start = System.currentTimeMillis();
 					solvePlacementProblem();
 					writeOutput();	
 					if(!pModel.equals(PlacementModel.ONESLIDER)){
