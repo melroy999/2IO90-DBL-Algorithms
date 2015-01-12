@@ -102,7 +102,7 @@ public class Plane {
 					while (indexToRight <= posPoints.length - 1 && clean
 							&& posPoints[xSortedOrder[indexToRight]].getX() - p.getX() < 2 * maxHeight * aspectRatio) {
 						int difY = posPoints[xSortedOrder[indexToRight]].getY() - p.getY();
-						if (difY < maxHeight && difY >= 0) {
+						if (Math.abs(difY) < 2*maxHeight) {
 							clean = false;
 							break;
 						}
@@ -110,17 +110,17 @@ public class Plane {
 					}
 
 					if (!clean) {
-						Label NE = new Label(p, 1, true);
+						Label NE = new Label(p, 1, false);
 						allLabels.add(NE);// shift=1 and top=true gives us the NE label;
 						clauseToPoint.put(NE.toClause(), p);
 
-						Label NW = new Label(p, 0, true);
+						Label NW = new Label(p, 0, false);
 						allLabels.add(NW);// shift=1 and top=true gives us the NE label;
 						clauseToPoint.put(NW.toClause(), p);
 
 						clean = true;
 					} else {
-						p.setPosition(Orientation.NE);
+						p.setPosition(Orientation.SE);
 					}
 
 					if (!clean) {
@@ -129,7 +129,7 @@ public class Plane {
 
 						while (indexToLeft >= 0 && clean && p.getX() - posPoints[xSortedOrder[indexToLeft]].getX() < 2 * maxHeight * aspectRatio) {
 							int difY = posPoints[xSortedOrder[indexToLeft]].getY() - p.getY();
-							if (difY < maxHeight && difY >= 0) {
+							if (Math.abs(difY) < 2*maxHeight) {
 								clean = false;
 								break;
 							}
@@ -137,36 +137,36 @@ public class Plane {
 						}
 
 						if (!clean) {
-							Label NE = new Label(p, 1, true);
+							Label NE = new Label(p, 1, false);
 							allLabels.add(NE);// shift=1 and top=true gives us the NE label;
 							clauseToPoint.put(NE.toClause(), p);
 
-							Label NW = new Label(p, 0, true);
+							Label NW = new Label(p, 0, false);
 							allLabels.add(NW);// shift=1 and top=true gives us the NE label;
 							clauseToPoint.put(NW.toClause(), p);
 						} else {
-							p.setPosition(Orientation.NW);
+							p.setPosition(Orientation.SW);
 						}
 					}
 				} else {// i = posPoints.length-1
-					Label NE = new Label(p, 1, true);
+					Label NE = new Label(p, 1, false);
 					allLabels.add(NE);// shift=1 and top=true gives us the
 										// NE label;
 					clauseToPoint.put(NE.toClause(), p);
 		
-					Label NW = new Label(p, 0, true);
+					Label NW = new Label(p, 0, false);
 					allLabels.add(NW);// shift=1 and top=true gives us the NE label;
 					clauseToPoint.put(NW.toClause(), p);
 					
 					//p.setPosition(Orientation.NE);
 				}
 			} else {// i==0
-				Label NE = new Label(p, 1, true);
+				Label NE = new Label(p, 1, false);
 				allLabels.add(NE);// shift=1 and top=true gives us the
 									// NE label;
 				clauseToPoint.put(NE.toClause(), p);
 	
-				Label NW = new Label(p, 0, true);
+				Label NW = new Label(p, 0, false);
 				allLabels.add(NW);// shift=1 and top=true gives us the NE label;
 				clauseToPoint.put(NW.toClause(), p);
 				
@@ -304,7 +304,7 @@ public class Plane {
 
 		for (PosPoint p : posPoints) {
 			if (p.getPosition() == null) {
-				p.setPosition(Orientation.NE);
+				p.setPosition(Orientation.SE);
 			}
 		}
 		MapLabeler.placementTime += (System.nanoTime() - time);
@@ -1719,5 +1719,66 @@ public class Plane {
 		 */
 		
 		return amount;
+	}
+	
+	public PosPoint[] RotatePlane(int degree, PosPoint[] posPoints, double aspectRatio){
+		aspectRatio = 1/aspectRatio;
+		PosPoint[] newPoints = new PosPoint[posPoints.length];
+		if(degree==0){
+			return posPoints;
+		} else {
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				newPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), degree), rotateY(p.getX(), p.getY(), degree));
+			}
+		}
+		return newPoints;
+	}
+	
+	public int rotateX(int x, int y, int degree){
+		x = x - 5000;
+		y = y - 5000;
+		return (int)Math.round(x*Math.cos(degree)-y*Math.sin(degree)) + 5000;
+	}
+	
+	public int rotateY(int x, int y, int degree){
+		x = x - 5000;
+		y = y - 5000;
+		return (int)Math.round(y*Math.cos(degree)+x*Math.sin(degree)) + 5000;
+	}
+	
+	public PosPoint[] RestorePlane(int degree, PosPoint[] posPoints){
+		PosPoint[] oldPoints = new PosPoint[posPoints.length];
+		if(degree==0){
+			return posPoints;
+		} else if(degree==90){
+			HashMap<Orientation, Orientation> convertTable = new HashMap<Orientation, Orientation>();
+			convertTable.put(Orientation.NE, Orientation.SE);
+			convertTable.put(Orientation.NW, Orientation.NE);
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				oldPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), -degree), rotateY(p.getX(), p.getY(), -degree));
+				oldPoints[i].setPosition(convertTable.get(p.getPosition()));
+			}
+		} else if(degree==180){
+			HashMap<Orientation, Orientation> convertTable = new HashMap<Orientation, Orientation>();
+			convertTable.put(Orientation.NE, Orientation.SW);
+			convertTable.put(Orientation.NW, Orientation.SE);
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				oldPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), -degree), rotateY(p.getX(), p.getY(), -degree));
+				oldPoints[i].setPosition(convertTable.get(p.getPosition()));
+			}
+		} else {
+			HashMap<Orientation, Orientation> convertTable = new HashMap<Orientation, Orientation>();
+			convertTable.put(Orientation.NE, Orientation.NW);
+			convertTable.put(Orientation.NW, Orientation.SW);
+			for(int i = 0; i < posPoints.length; i++){
+				PosPoint p = posPoints[i];
+				oldPoints[i] = new PosPoint(rotateX(p.getX(), p.getY(), -degree), rotateY(p.getX(), p.getY(), -degree));
+				oldPoints[i].setPosition(convertTable.get(p.getPosition()));
+			}
+		}
+		return oldPoints;
 	}
 }
