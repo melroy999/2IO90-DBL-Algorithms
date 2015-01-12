@@ -402,9 +402,10 @@ public class Plane {
 		
 		
 		ArrayList<Integer> labelsToProcessIndex = new ArrayList<Integer>();
+		ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
 		
 		int timeend = 290000;
-		//timeend = 10000;
+		timeend = 5000;
 		
 		
 		int loops = 0;
@@ -413,7 +414,7 @@ public class Plane {
 			rangeX = posPoints[xSortedOrder[xSortedOrder.length - 1]].getX();
 
 			ArrayList<Label> labelsDone = new ArrayList<Label>();
-			ArrayList<Integer> labelsDoneIndex = new ArrayList<Integer>();
+			labelsDoneIndex = new ArrayList<Integer>();
 			ArrayList<PosPoint> labelsToProcess = new ArrayList<PosPoint>();
 			labelsToProcessIndex = new ArrayList<Integer>();
 
@@ -643,28 +644,49 @@ public class Plane {
 		
 		
 		Label[] processed = finalBest.getLabels();
-		Label[] result = new Label[processed.length + labelsFinalDone.size()];
 		
-		debugPrint("result size" + result.length);
 		
-		for(int i = 0; i < processed.length; i++){
-			if(labelsFinalIndex.size() > 0){
+		int size = 0;
+		if(labelsFinalIndex.size() > 0){ size += processed.length; }
+		else { size += labelsToProcessIndex.size();}
+		if(labelsFinalDone.size() > 0){ size += labelsFinalDone.size(); }
+		else { size += labelsDoneIndex.size();}
+		
+		Label[] result = new Label[size];
+		
+		
+		
+		if(labelsFinalIndex.size() > 0){
+			for(int i = 0; i < processed.length; i++){
 				int index = labelsFinalIndex.get(i);
 				result[index] = processed[i];
 			}
-			else {
+		}
+		else {
+			for(int i = 0; i < labelsToProcessIndex.size(); i++){
 				int index = labelsToProcessIndex.get(i);
 				result[index] = processed[i];
 			}
+		}
+		
+		
+		if(labelsFinalDone.size() > 0){
+			for(int i = 0; i < labelsFinalDone.size(); i++){
+				int index = labelsFinalDoneIndex.get(i);
+				result[index] = labelsFinalDone.get(i);
+			}
+		}
+		else {
+			for(int i = 0; i < labelsDoneIndex.size(); i++){
+				int index = labelsDoneIndex.get(i);
+				result[index] = processed[i];
+			}
+		}
 			
 			//System.out.println(index + " " + processed[i]);
 			
-		}
-		for(int i = 0; i < labelsFinalDone.size(); i++){
-			int index = labelsFinalDoneIndex.get(i);
-			//System.out.println(index + " " + labelsFinalDone.get(i));
-			result[index] = labelsFinalDone.get(i);
-		}
+		
+		
 		
 		labels = result;
 		debugPrint("Skipped by final optimalization: " + labelsFinalDone.size());
