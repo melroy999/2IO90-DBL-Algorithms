@@ -3,7 +3,6 @@ import java.awt.geom.Rectangle2D;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,10 +35,9 @@ public class Plane {
 	public int[] xPointArray; // slider pointers
 	private PosPoint[] posPoints;
 
-
 	private double delta = 0.001;// difference of border
 	private boolean debug = true;
-
+	
 	public Plane(double aspectRatio, SliderPoint[] points, PlacementModel pModel) {
 		this.aspectRatio = aspectRatio;
 		this.numberOfPoints = points.length;
