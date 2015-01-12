@@ -1,7 +1,6 @@
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-
 public class SliderPoint extends Point {
 	public enum slideDirection{LEFT,RIGHT}
 	private slideDirection direction;
@@ -97,7 +96,5 @@ public class SliderPoint extends Point {
 		rightX 	  = NEWrightX;
 		topY 	  = NEWtopY;
 		direction = NEWdirection;
-	}
-
-		
+	}	
 }
