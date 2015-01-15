@@ -96,8 +96,6 @@ public class MapLabeler {
 				totalMaxColTime = 0;//
 				totalMax2SatTime = 0;//
 				
-				//input = new File("pointsamm_100.txt");
-				//output = new File("w000t.txt");
 				input = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + ".txt");
 				output = new File("tests/"+testing+"/test" + test + "/pointsamm_" + points + "_solved.txt");
 				for(int iteration = 0; iteration < 1; iteration++){
@@ -299,6 +297,12 @@ public class MapLabeler {
 				SliderPoint[] s = plane.getSliderPoints();
 				for(int i=0; i<s.length; i++){
 					System.out.println("" + s[i].getX() + " " + s[i].getY() + " " + s[i].getS());
+				}
+			}
+			else if(pModel == PlacementModel.FOURPOS){
+				Label[] l = iets;
+				for(int i = 0; i < l.length; i++){
+					System.out.println("" + l[i].getX() + " " + l[i].getY() + " " + l[i].getOrientation().toString());//TODO redo orientation text
 				}
 			}
 			else{
